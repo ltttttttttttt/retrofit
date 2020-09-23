@@ -18,7 +18,7 @@ dependencies {
   testImplementation project(':test:test-helpers')
   testImplementation deps.junit
   testImplementation deps.assertj
-//  testImplementation deps.guava
+  testImplementation deps.guava
   testImplementation deps.mockwebserver
   testImplementation deps.kotlinStdLib
   testImplementation deps.kotlinCoroutines
