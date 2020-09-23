@@ -1,4 +1,4 @@
-//apply plugin: 'com.android.library'
+apply plugin: 'com.android.library'
 
 android {
   compileSdkVersion 29
@@ -28,7 +28,7 @@ android {
 
 dependencies {
   androidTestImplementation project(':retrofit')
-  androidTestImplementation project(':retrofit:test-helpers')
+  androidTestImplementation project(':test:test-helpers')
   androidTestImplementation deps.junit
   androidTestImplementation deps.assertj
   androidTestImplementation deps.mockwebserver
