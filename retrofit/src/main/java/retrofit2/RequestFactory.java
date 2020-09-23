@@ -322,6 +322,7 @@ final class RequestFactory {
         int p, Type parameterType, @Nullable Annotation[] annotations, boolean allowContinuation) {
       ParameterHandler<?> result = null;
       if (annotations != null) {
+        //by lt 在这里处理了函数的参数的默认注解(不使用注解就相当于用了@Field,但是只支持kt文件的interface),库中增加了kt反射
         if (annotations.length == 0) {
           result = RequestFactoryKtUtil.handlerParameterFromNoAnnotation(this, p, parameterType, annotations);
         } else {
