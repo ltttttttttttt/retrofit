@@ -15,9 +15,6 @@
  */
 package retrofit2;
 
-import static retrofit2.Utils.methodError;
-import static retrofit2.Utils.parameterError;
-
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -31,7 +28,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.annotation.Nullable;
+
 import kotlin.coroutines.Continuation;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -61,6 +60,9 @@ import retrofit2.http.QueryMap;
 import retrofit2.http.QueryName;
 import retrofit2.http.Tag;
 import retrofit2.http.Url;
+
+import static retrofit2.Utils.methodError;
+import static retrofit2.Utils.parameterError;
 
 final class RequestFactory {
   static RequestFactory parseAnnotations(Retrofit retrofit, Method method) {
@@ -223,16 +225,21 @@ final class RequestFactory {
     }
 
     private void parseMethodAnnotation(Annotation annotation) {
-      if (annotation instanceof DELETE) {
-        parseHttpMethodAndPath("DELETE", ((DELETE) annotation).value(), false);
+      if (annotation instanceof POST) {
+        parseHttpMethodAndPath("POST", ((POST) annotation).value(), true);
+      } else if (annotation instanceof FormUrlEncoded) {
+        if (isMultipart) {
+          throw methodError(method, "Only one encoding annotation is allowed.");
+        }
+        isFormEncoded = true;
       } else if (annotation instanceof GET) {
         parseHttpMethodAndPath("GET", ((GET) annotation).value(), false);
       } else if (annotation instanceof HEAD) {
         parseHttpMethodAndPath("HEAD", ((HEAD) annotation).value(), false);
       } else if (annotation instanceof PATCH) {
         parseHttpMethodAndPath("PATCH", ((PATCH) annotation).value(), true);
-      } else if (annotation instanceof POST) {
-        parseHttpMethodAndPath("POST", ((POST) annotation).value(), true);
+      } else if (annotation instanceof DELETE) {
+        parseHttpMethodAndPath("DELETE", ((DELETE) annotation).value(), false);
       } else if (annotation instanceof PUT) {
         parseHttpMethodAndPath("PUT", ((PUT) annotation).value(), true);
       } else if (annotation instanceof OPTIONS) {
@@ -251,11 +258,6 @@ final class RequestFactory {
           throw methodError(method, "Only one encoding annotation is allowed.");
         }
         isMultipart = true;
-      } else if (annotation instanceof FormUrlEncoded) {
-        if (isMultipart) {
-          throw methodError(method, "Only one encoding annotation is allowed.");
-        }
-        isFormEncoded = true;
       }
     }
 
@@ -320,20 +322,24 @@ final class RequestFactory {
         int p, Type parameterType, @Nullable Annotation[] annotations, boolean allowContinuation) {
       ParameterHandler<?> result = null;
       if (annotations != null) {
-        for (Annotation annotation : annotations) {
-          ParameterHandler<?> annotationAction =
-              parseParameterAnnotation(p, parameterType, annotations, annotation);
+        if (annotations.length == 0) {
+          result = RequestFactoryKtUtil.handlerParameterFromNoAnnotation(this, p, parameterType, annotations);
+        } else {
+          for (Annotation annotation : annotations) {
+            ParameterHandler<?> annotationAction =
+                    parseParameterAnnotation(p, parameterType, annotations, annotation);
 
-          if (annotationAction == null) {
-            continue;
+            if (annotationAction == null) {
+              continue;
+            }
+
+            if (result != null) {
+              throw parameterError(
+                      method, p, "Multiple Retrofit annotations found, only one allowed.");
+            }
+
+            result = annotationAction;
           }
-
-          if (result != null) {
-            throw parameterError(
-                method, p, "Multiple Retrofit annotations found, only one allowed.");
-          }
-
-          result = annotationAction;
         }
       }
 
@@ -808,7 +814,7 @@ final class RequestFactory {
       return null; // Not a Retrofit annotation.
     }
 
-    private void validateResolvableType(int p, Type type) {
+    void validateResolvableType(int p, Type type) {
       if (Utils.hasUnresolvableType(type)) {
         throw parameterError(
             method, p, "Parameter type must not include a type variable or wildcard: %s", type);
@@ -843,7 +849,7 @@ final class RequestFactory {
       return patterns;
     }
 
-    private static Class<?> boxIfPrimitive(Class<?> type) {
+    static Class<?> boxIfPrimitive(Class<?> type) {
       if (boolean.class == type) return Boolean.class;
       if (byte.class == type) return Byte.class;
       if (char.class == type) return Character.class;

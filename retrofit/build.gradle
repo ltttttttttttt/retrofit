@@ -1,6 +1,8 @@
 apply plugin: 'java-library'
 apply plugin: 'org.jetbrains.kotlin.jvm'
-apply plugin: 'com.vanniktech.maven.publish'
+//apply plugin: 'com.vanniktech.maven.publish'
+apply plugin: 'com.github.dcendents.android-maven'//this
+group='com.github.ltttttttttttt'//this
 
 dependencies {
   api deps.okhttp
@@ -8,6 +10,7 @@ dependencies {
   compileOnly deps.android
   compileOnly deps.kotlinStdLib
   compileOnly deps.kotlinCoroutines
+  compileOnly deps.kotlinReflect
 
   compileOnly deps.animalSnifferAnnotations
   compileOnly deps.findBugsAnnotations
