@@ -1,6 +1,5 @@
-apply plugin: 'java'
-apply plugin: 'robovm'
-group='com.github.no'
+//apply plugin: 'java'
+//apply plugin: 'robovm'
 
 ext.mainClassName = 'retrofit2.RoboVmPlatformTest'
 

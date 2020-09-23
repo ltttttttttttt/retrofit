@@ -1,5 +1,4 @@
-apply plugin: 'java-library'
-group='com.github.no'
+//apply plugin: 'java-library'
 
 dependencies {
   api project(':retrofit')

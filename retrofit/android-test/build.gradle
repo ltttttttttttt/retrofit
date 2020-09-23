@@ -1,5 +1,4 @@
-apply plugin: 'com.android.library'
-group='com.github.no'
+//apply plugin: 'com.android.library'
 
 android {
   compileSdkVersion 29
