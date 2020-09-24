@@ -15,7 +15,7 @@ dependencies {
   compileOnly deps.animalSnifferAnnotations
   compileOnly deps.findBugsAnnotations
 
-  testImplementation project(':test:test-helpers')
+  testImplementation project(':retrofit:test-helpers')
   testImplementation deps.junit
   testImplementation deps.assertj
   testImplementation deps.guava

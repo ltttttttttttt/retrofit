@@ -28,7 +28,7 @@ android {
 
 dependencies {
   androidTestImplementation project(':retrofit')
-  androidTestImplementation project(':test:test-helpers')
+  androidTestImplementation project(':retrofit:test-helpers')
   androidTestImplementation deps.junit
   androidTestImplementation deps.assertj
   androidTestImplementation deps.mockwebserver
