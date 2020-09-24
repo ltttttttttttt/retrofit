@@ -15,8 +15,6 @@
  */
 package retrofit2;
 
-import static java.util.Collections.unmodifiableList;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -33,7 +31,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+
 import javax.annotation.Nullable;
+
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -42,6 +42,8 @@ import retrofit2.http.GET;
 import retrofit2.http.HTTP;
 import retrofit2.http.Header;
 import retrofit2.http.Url;
+
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Retrofit adapts a Java interface to HTTP calls by using annotations on the declared methods to
@@ -67,7 +69,7 @@ public final class Retrofit {
   private final Map<Method, ServiceMethod<?>> serviceMethodCache = new ConcurrentHashMap<>();
 
   final okhttp3.Call.Factory callFactory;
-  final HttpUrl baseUrl;
+  HttpUrl baseUrl;
   final List<Converter.Factory> converterFactories;
   final List<CallAdapter.Factory> callAdapterFactories;
   final @Nullable Executor callbackExecutor;
@@ -217,6 +219,81 @@ public final class Retrofit {
   /** The API base URL. */
   public HttpUrl baseUrl() {
     return baseUrl;
+  }
+
+  /**
+   * Set the API base URL.
+   */
+  public void setBaseUrl(URL baseUrl) {
+    Objects.requireNonNull(baseUrl, "baseUrl == null");
+    this.baseUrl = HttpUrl.get(baseUrl.toString());
+  }
+
+  /**
+   * Set the API base URL.
+   */
+  public void setBaseUrl(String baseUrl) {
+    Objects.requireNonNull(baseUrl, "baseUrl == null");
+    this.baseUrl = HttpUrl.get(baseUrl);
+  }
+
+  /**
+   * Set the API base URL.
+   *
+   * <p>The specified endpoint values (such as with {@link GET @GET}) are resolved against this
+   * value using {@link HttpUrl#resolve(String)}. The behavior of this matches that of an {@code
+   * <a href="">} link on a website resolving on the current URL.
+   *
+   * <p><b>Base URLs should always end in {@code /}.</b>
+   *
+   * <p>A trailing {@code /} ensures that endpoints values which are relative paths will correctly
+   * append themselves to a base which has path components.
+   *
+   * <p><b>Correct:</b><br>
+   * Base URL: http://example.com/api/<br>
+   * Endpoint: foo/bar/<br>
+   * Result: http://example.com/api/foo/bar/
+   *
+   * <p><b>Incorrect:</b><br>
+   * Base URL: http://example.com/api<br>
+   * Endpoint: foo/bar/<br>
+   * Result: http://example.com/foo/bar/
+   *
+   * <p>This method enforces that {@code baseUrl} has a trailing {@code /}.
+   *
+   * <p><b>Endpoint values which contain a leading {@code /} are absolute.</b>
+   *
+   * <p>Absolute values retain only the host from {@code baseUrl} and ignore any specified path
+   * components.
+   *
+   * <p>Base URL: http://example.com/api/<br>
+   * Endpoint: /foo/bar/<br>
+   * Result: http://example.com/foo/bar/
+   *
+   * <p>Base URL: http://example.com/<br>
+   * Endpoint: /foo/bar/<br>
+   * Result: http://example.com/foo/bar/
+   *
+   * <p><b>Endpoint values may be a full URL.</b>
+   *
+   * <p>Values which have a host replace the host of {@code baseUrl} and values also with a scheme
+   * replace the scheme of {@code baseUrl}.
+   *
+   * <p>Base URL: http://example.com/<br>
+   * Endpoint: https://github.com/square/retrofit/<br>
+   * Result: https://github.com/square/retrofit/
+   *
+   * <p>Base URL: http://example.com<br>
+   * Endpoint: //github.com/square/retrofit/<br>
+   * Result: http://github.com/square/retrofit/ (note the scheme stays 'http')
+   */
+  public void setBaseUrl(HttpUrl baseUrl) {
+    Objects.requireNonNull(baseUrl, "baseUrl == null");
+    List<String> pathSegments = baseUrl.pathSegments();
+    if (!"".equals(pathSegments.get(pathSegments.size() - 1))) {
+      throw new IllegalArgumentException("baseUrl must end in /: " + baseUrl);
+    }
+    this.baseUrl = baseUrl;
   }
 
   /**
