@@ -1,5 +1,5 @@
 include ':retrofit'
-//include ':retrofit:android-test'
+//include ':retrofit:android-test'//如果不需要使用安卓测试,可以不打开,因为其与JitPack冲突了
 include ':retrofit:robovm-test'
 include ':retrofit:test-helpers'
 
