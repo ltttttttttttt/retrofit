@@ -180,6 +180,12 @@ final class RequestFactory {
 
     RequestFactory build() {
       for (Annotation annotation : methodAnnotations) {
+        if(annotation instanceof POST && parameterTypes.length > 0 && ((POST) annotation).isUseFormUrlEncoded()){
+          if (isMultipart) {
+            throw methodError(method, "Only one encoding annotation is allowed.");
+          }
+          isFormEncoded = true;
+        }
         parseMethodAnnotation(annotation);
       }
 
