@@ -23,14 +23,12 @@ import org.assertj.core.api.Assertions
 import org.junit.Test
 import retrofit2.helpers.ToStringConverterFactory
 import retrofit2.http.Field
-import retrofit2.http.FormUrlEncoded
 import retrofit2.http.POST
 import java.io.IOException
 
 interface Example {
-    @FormUrlEncoded
     @POST("/foo")
-    fun method(/*@Field("foo")*/ foo: String?, @Field("ping") ping: String?): Call<ResponseBody>?
+    fun method(foo2: String?, @Field("ping") ping2: String?): Call<ResponseBody>
 }
 
 class FieldCallTest {
@@ -38,7 +36,7 @@ class FieldCallTest {
     fun simpleFormEncoded() {
         val request = buildRequest(Example::class.java, "bar", "pong")
         val body = request.body()
-        assertBody(body, "foo=bar&ping=pong")
+        assertBody(body, "foo2=bar&ping=pong")
         Assertions.assertThat(body!!.contentType().toString()).isEqualTo("application/x-www-form-urlencoded")
     }
 

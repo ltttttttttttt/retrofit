@@ -1,5 +1,5 @@
 include ':retrofit'
-include ':retrofit:android-test'
+//include ':retrofit:android-test'
 include ':retrofit:robovm-test'
 include ':retrofit:test-helpers'
 
