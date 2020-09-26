@@ -21,10 +21,8 @@ object RequestFactoryKtUtil {
         if (!isFormEncoded) {
             throw Utils.parameterError(method, p, "@Field parameters can only be used with form encoding.")
         }
-        System.out.println("threadName:"+Thread.currentThread().name+ "    "+System.currentTimeMillis())
         val ktFunction = method.kotlinFunction
                 ?: throw Utils.parameterError(method, p, "@Field not find, or use kt file by lt 2333.")
-        System.out.println(" endTime   "+System.currentTimeMillis())
         val name: String = ktFunction.parameters[p + 1].name
                 ?: throw Utils.parameterError(method, p, "parameter name is null.")
         val encoded = false
