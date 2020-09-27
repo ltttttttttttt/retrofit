@@ -142,7 +142,7 @@ final class RequestFactory {
   static final class Builder {
     // Upper and lower characters, digits, underscores, and hyphens, starting with a character.
     private static final String PARAM = "[a-zA-Z][a-zA-Z0-9_-]*";
-    private static final Pattern PARAM_URL_REGEX = Pattern.compile("\\{(" + PARAM + ")\\}");
+    static final Pattern PARAM_URL_REGEX = Pattern.compile("\\{(" + PARAM + ")\\}");
     private static final Pattern PARAM_NAME_REGEX = Pattern.compile(PARAM);
 
     final Retrofit retrofit;
@@ -179,6 +179,10 @@ final class RequestFactory {
     }
 
     RequestFactory build() {
+      if(methodAnnotations.length == 0){
+        //如果方法没有加注解,就默认加上POST和FormUrlEncoded注解,并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
+        RequestFactoryKtUtil.handlerParseMethodDefaultAnnotation(this);
+      }
       for (Annotation annotation : methodAnnotations) {
         if(annotation instanceof POST && parameterTypes.length > 0 && ((POST) annotation).isUseFormUrlEncoded()){
           if (isMultipart) {

@@ -6,10 +6,63 @@ import kotlin.reflect.jvm.kotlinFunction
 
 /**
  * creator: lt  2020/9/23  lt.dygzs@qq.com
- * effect : 处理如果参数不加任何注解,则默认是@Field,并且value为参数名
+ * effect :
  * warning:
  */
 object RequestFactoryKtUtil {
+
+    /**
+     * 处理如果方法不加任何注解,则默认是@POST和@FormUrlEncoded,并且url为方法名,
+     */
+    @JvmStatic
+    @Suppress("EXPOSED_FUNCTION_RETURN_TYPE", "EXPOSED_RECEIVER_TYPE")
+    fun RequestFactory.Builder.handlerParseMethodDefaultAnnotation() {
+        if (parameterTypes.isNotEmpty()) {
+            if (isMultipart) {
+                throw Utils.methodError(method, "Only one encoding annotation is allowed.")
+            }
+            isFormEncoded = true
+        }
+        val value = method.name.replace('$', '\\')
+        val httpMethod = "POST"
+        val hasBody = true
+        if (this.httpMethod != null) {
+            throw Utils.methodError(
+                    method,
+                    "Only one HTTP method is allowed. Found: %s and %s.",
+                    this.httpMethod,
+                    httpMethod)
+        }
+        this.httpMethod = httpMethod
+        this.hasBody = hasBody
+
+        if (value.isEmpty()) {
+            return
+        }
+
+        // Get the relative URL path and existing query string, if present.
+
+        // Get the relative URL path and existing query string, if present.
+        val question = value.indexOf('?')
+        if (question != -1 && question < value.length - 1) {
+            // Ensure the query string does not have any named parameters.
+            val queryParams = value.substring(question + 1)
+            val queryParamMatcher = RequestFactory.Builder.PARAM_URL_REGEX.matcher(queryParams)
+            if (queryParamMatcher.find()) {
+                throw Utils.methodError(
+                        method, "URL query string \"%s\" must not have replace block. "
+                        + "For dynamic query parameters use @Query.",
+                        queryParams)
+            }
+        }
+
+        relativeUrl = value
+        relativeUrlParamNames = RequestFactory.Builder.parsePathParameters(value)
+    }
+
+    /**
+     * 处理如果参数不加任何注解,则默认是@Field,并且value为参数名
+     */
     @JvmStatic
     @Suppress("EXPOSED_FUNCTION_RETURN_TYPE", "EXPOSED_RECEIVER_TYPE")
     fun RequestFactory.Builder.handlerParameterFromNoAnnotation(
