@@ -17,7 +17,7 @@ object RequestFactoryKtUtil {
     @JvmStatic
     @Suppress("EXPOSED_FUNCTION_RETURN_TYPE", "EXPOSED_RECEIVER_TYPE")
     fun RequestFactory.Builder.handlerParseMethodDefaultAnnotation() {
-        if (parameterTypes.isNotEmpty()) {
+        if (parameterTypes.isNotEmpty() && !(parameterTypes.size == 1 && isKotlinSuspendFunction)) {
             if (isMultipart) {
                 throw Utils.methodError(method, "Only one encoding annotation is allowed.")
             }

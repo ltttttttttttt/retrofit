@@ -179,12 +179,20 @@ final class RequestFactory {
     }
 
     RequestFactory build() {
+      for (Type parameterType : parameterTypes) {
+        if (Utils.getRawType(parameterType) == Continuation.class) {
+          isKotlinSuspendFunction = true;
+          break;
+        }
+      }
       if(methodAnnotations.length == 0){
         //如果方法没有加注解,就默认加上POST和FormUrlEncoded注解,并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
         RequestFactoryKtUtil.handlerParseMethodDefaultAnnotation(this);
       }
       for (Annotation annotation : methodAnnotations) {
-        if(annotation instanceof POST && parameterTypes.length > 0 && ((POST) annotation).isUseFormUrlEncoded()){
+        if(annotation instanceof POST && parameterTypes.length > 0
+                && ((POST) annotation).isUseFormUrlEncoded()
+                && !(parameterTypes.length == 1 && isKotlinSuspendFunction)){
           if (isMultipart) {
             throw methodError(method, "Only one encoding annotation is allowed.");
           }
@@ -357,8 +365,7 @@ final class RequestFactory {
       if (result == null) {
         if (allowContinuation) {
           try {
-            if (Utils.getRawType(parameterType) == Continuation.class) {
-              isKotlinSuspendFunction = true;
+            if (isKotlinSuspendFunction) {
               return null;
             }
           } catch (NoClassDefFoundError ignored) {
