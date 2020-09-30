@@ -5,6 +5,12 @@ A type-safe HTTP client for Android and Java.
 
 For more information please see [the website][1].
 
+使用说明:https://blog.csdn.net/qq_33505109/article/details/108767068
+
+
+
+
+
 
 Download
 --------
