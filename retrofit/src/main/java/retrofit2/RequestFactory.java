@@ -179,11 +179,8 @@ final class RequestFactory {
     }
 
     RequestFactory build() {
-      for (Type parameterType : parameterTypes) {
-        if (Utils.getRawType(parameterType) == Continuation.class) {
-          isKotlinSuspendFunction = true;
-          break;
-        }
+      if (parameterTypes.length >= 1 && Utils.getRawType(parameterTypes[parameterTypes.length-1]) == Continuation.class) {
+        isKotlinSuspendFunction = true;
       }
       if(methodAnnotations.length == 0){
         //如果方法没有加注解,就默认加上POST和FormUrlEncoded注解,并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
