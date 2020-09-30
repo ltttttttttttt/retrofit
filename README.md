@@ -15,7 +15,7 @@ For more information please see [the website][1].
 Download
 --------
 
-Download [the latest JAR][2] or grab from Maven central at the coordinates `com.github.ltttttttttttt:retrofit:1.1.8`.
+Download [the latest JAR][2] or grab from Maven central at the coordinates `com.github.ltttttttttttt:retrofit:1.1.9`.
 
 Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
 
