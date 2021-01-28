@@ -15,6 +15,9 @@
  */
 package retrofit2;
 
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -32,8 +35,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
-import javax.annotation.Nullable;
-
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -41,6 +42,7 @@ import okhttp3.ResponseBody;
 import retrofit2.http.GET;
 import retrofit2.http.HTTP;
 import retrofit2.http.Header;
+import retrofit2.http.POST;
 import retrofit2.http.Url;
 
 import static java.util.Collections.unmodifiableList;
@@ -74,6 +76,7 @@ public final class Retrofit {
   final List<CallAdapter.Factory> callAdapterFactories;
   final @Nullable Executor callbackExecutor;
   final boolean validateEagerly;
+  final Class<?> defaultAnnotationClass;
 
   Retrofit(
       okhttp3.Call.Factory callFactory,
@@ -81,13 +84,15 @@ public final class Retrofit {
       List<Converter.Factory> converterFactories,
       List<CallAdapter.Factory> callAdapterFactories,
       @Nullable Executor callbackExecutor,
-      boolean validateEagerly) {
+      boolean validateEagerly,
+      @NotNull Class<?> defaultAnnotationClass) {
     this.callFactory = callFactory;
     this.baseUrl = baseUrl;
     this.converterFactories = converterFactories; // Copy+unmodifiable at call site.
     this.callAdapterFactories = callAdapterFactories; // Copy+unmodifiable at call site.
     this.callbackExecutor = callbackExecutor;
     this.validateEagerly = validateEagerly;
+    this.defaultAnnotationClass = defaultAnnotationClass;
   }
 
   /**
@@ -509,6 +514,7 @@ public final class Retrofit {
     private final List<CallAdapter.Factory> callAdapterFactories = new ArrayList<>();
     private @Nullable Executor callbackExecutor;
     private boolean validateEagerly;
+    private @Nullable Class<?> defaultAnnotationClass = POST.class;
 
     Builder(Platform platform) {
       this.platform = platform;
@@ -643,6 +649,18 @@ public final class Retrofit {
       return this;
     }
 
+    /**
+     * 设置如果没有注解默认使用哪个注解,且参数的注解也会相应切换
+     * 仅支持GET.class和POST.class,默认是POST.class
+     * 如果是POST,则参数的默认注解是@Field,如果是GET,则参数的默认注解是@Query
+     */
+    public Builder defaultAnnotation(@NotNull Class<?> defaultAnnotationClass) {
+      if (defaultAnnotationClass != POST.class && defaultAnnotationClass != GET.class)
+        throw new IllegalArgumentException("defaultAnnotation must set GET.class or POST.class");
+      this.defaultAnnotationClass = defaultAnnotationClass;
+      return this;
+    }
+
     /** Add converter factory for serialization and deserialization of objects. */
     public Builder addConverterFactory(Converter.Factory factory) {
       converterFactories.add(Objects.requireNonNull(factory, "factory == null"));
@@ -731,7 +749,8 @@ public final class Retrofit {
           unmodifiableList(converterFactories),
           unmodifiableList(callAdapterFactories),
           callbackExecutor,
-          validateEagerly);
+          validateEagerly, 
+          defaultAnnotationClass);
     }
   }
 }

@@ -183,7 +183,7 @@ final class RequestFactory {
         isKotlinSuspendFunction = true;
       }
       if(methodAnnotations.length == 0){
-        //如果方法没有加注解,就默认加上POST和FormUrlEncoded注解,并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
+        //by lt 如果方法没有加注解,就默认加上POST和FormUrlEncoded注解(或GET),并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
         RequestFactoryKtUtil.handlerParseMethodDefaultAnnotation(this);
       }
       for (Annotation annotation : methodAnnotations) {
@@ -337,7 +337,7 @@ final class RequestFactory {
         int p, Type parameterType, @Nullable Annotation[] annotations, boolean allowContinuation) {
       ParameterHandler<?> result = null;
       if (annotations != null) {
-        //by lt 在这里处理了函数的参数的默认注解(不使用注解就相当于用了@Field,但是只支持kt文件的interface),库中增加了kt反射
+        //by lt 在这里处理了函数的参数的默认注解(不使用注解就相当于用了@Field(或@Query),但是只支持kt文件的interface),库中增加了kt反射
         if (annotations.length == 0 && Utils.getRawType(parameterType) != Continuation.class) {
           result = RequestFactoryKtUtil.handlerParameterFromNoAnnotation(this, p, parameterType, annotations);
         } else {

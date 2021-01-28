@@ -3,7 +3,7 @@ import org.gradle.internal.jvm.Jvm
 
 buildscript {
   ext.versions = [
-      'kotlin': '1.4.10',
+      'kotlin': '1.4.20',
       'okhttp': '3.14.9',
       'protobuf': '3.10.0',
       'jaxb': '2.3.1',
