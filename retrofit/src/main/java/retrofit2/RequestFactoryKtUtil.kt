@@ -62,7 +62,7 @@ object RequestFactoryKtUtil {
         } else if (retrofit.defaultAnnotationClass == GET::class.java) {
             val value = method.name.replace('$', '\\')
             val httpMethod = "GET"
-            val hasBody = true
+            val hasBody = false
             if (this.httpMethod != null) {
                 throw Utils.methodError(
                         method,
