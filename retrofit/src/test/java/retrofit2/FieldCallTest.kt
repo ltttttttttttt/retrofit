@@ -22,15 +22,16 @@ import okio.Buffer
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import retrofit2.helpers.ToStringConverterFactory
-import retrofit2.http.Field
-import retrofit2.http.POST
+import retrofit2.http.GET
 import java.io.IOException
 
 interface Example {
-    @POST("/foo")
-    fun method(foo2: String?, @Field("ping") ping2: String?): Call<ResponseBody>
+    fun method(foo2: String?, ping: String?): Call<ResponseBody>
 }
 
+/**
+ * 测试默认注解和合并参数
+ */
 class FieldCallTest {
     @Test
     fun simpleFormEncoded() {
@@ -40,10 +41,41 @@ class FieldCallTest {
         Assertions.assertThat(body!!.contentType().toString()).isEqualTo("application/x-www-form-urlencoded")
     }
 
+    @Test
+    fun singleFormEncodedPOST() {
+        val request = buildRequestSinglePOST(Example::class.java, "bar1", "pong1")
+        val body = request.body()
+        assertBody(body, "str=%7Bfoo2%3Dbar1%2C%20ping%3Dpong1%7D")
+    }
+
+    @Test
+    fun singleFormEncodedGET() {
+        val request = buildRequestSingleGET(Example::class.java, "bar 2", "pong2")
+        println(request.url().url().query)
+        assert(request.url().url().query == "str=%7Bfoo2%3Dbar%202%2C%20ping%3Dpong2%7D")
+    }
+
     companion object {
         fun <T> buildRequest(cls: Class<T>?, vararg args: Any?): Request {
             val retrofitBuilder = Retrofit.Builder()
                     .baseUrl("http://example.com/")
+                    .addConverterFactory(ToStringConverterFactory())
+            return buildRequest(cls, retrofitBuilder, *args)
+        }
+
+        fun <T> buildRequestSinglePOST(cls: Class<T>?, vararg args: Any?): Request {
+            val retrofitBuilder = Retrofit.Builder()
+                    .baseUrl("http://example.com/")
+                    .setSingleParameter(true, "str")
+                    .addConverterFactory(ToStringConverterFactory())
+            return buildRequest(cls, retrofitBuilder, *args)
+        }
+
+        fun <T> buildRequestSingleGET(cls: Class<T>?, vararg args: Any?): Request {
+            val retrofitBuilder = Retrofit.Builder()
+                    .baseUrl("http://example.com/")
+                    .setSingleParameter(true, "str")
+                    .defaultAnnotation(GET::class.java)
                     .addConverterFactory(ToStringConverterFactory())
             return buildRequest(cls, retrofitBuilder, *args)
         }

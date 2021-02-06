@@ -15,51 +15,24 @@
  */
 package retrofit2;
 
+import com.sun.istack.internal.NotNull;
+import kotlin.coroutines.Continuation;
+import kotlin.reflect.KFunction;
+import kotlin.reflect.jvm.ReflectJvmMapping;
+import okhttp3.Headers;
+import okhttp3.*;
+import retrofit2.http.*;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
-
-import kotlin.coroutines.Continuation;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-import retrofit2.http.Body;
-import retrofit2.http.DELETE;
-import retrofit2.http.Field;
-import retrofit2.http.FieldMap;
-import retrofit2.http.FormUrlEncoded;
-import retrofit2.http.GET;
-import retrofit2.http.HEAD;
-import retrofit2.http.HTTP;
-import retrofit2.http.Header;
-import retrofit2.http.HeaderMap;
-import retrofit2.http.Multipart;
-import retrofit2.http.OPTIONS;
-import retrofit2.http.PATCH;
-import retrofit2.http.POST;
-import retrofit2.http.PUT;
-import retrofit2.http.Part;
-import retrofit2.http.PartMap;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
-import retrofit2.http.QueryMap;
-import retrofit2.http.QueryName;
-import retrofit2.http.Tag;
-import retrofit2.http.Url;
 
 import static retrofit2.Utils.methodError;
 import static retrofit2.Utils.parameterError;
@@ -78,8 +51,9 @@ final class RequestFactory {
   private final boolean hasBody;
   private final boolean isFormEncoded;
   private final boolean isMultipart;
-  private final ParameterHandler<?>[] parameterHandlers;
+  protected final ParameterHandler<?>[] parameterHandlers;
   final boolean isKotlinSuspendFunction;
+  protected final @NotNull Retrofit retrofit;
 
   RequestFactory(Builder builder) {
     method = builder.method;
@@ -93,6 +67,7 @@ final class RequestFactory {
     isMultipart = builder.isMultipart;
     parameterHandlers = builder.parameterHandlers;
     isKotlinSuspendFunction = builder.isKotlinSuspendFunction;
+    retrofit = builder.retrofit;
   }
 
   okhttp3.Request create(Object[] args) throws IOException {
@@ -131,6 +106,9 @@ final class RequestFactory {
       handlers[p].apply(requestBuilder, args[p]);
     }
 
+    if (retrofit.singleParameterName != null) {
+      RequestFactoryKtUtil.handlerSingleParameterHandlers(this, requestBuilder);
+    }
     return requestBuilder.get().tag(Invocation.class, new Invocation(method, argumentList)).build();
   }
 
@@ -218,9 +196,13 @@ final class RequestFactory {
 
       int parameterCount = parameterAnnotationsArray.length;
       parameterHandlers = new ParameterHandler<?>[parameterCount];
+      KFunction<?> kFunction = null;
       for (int p = 0, lastParameter = parameterCount - 1; p < parameterCount; p++) {
+        Annotation[] parameterAnnotations = parameterAnnotationsArray[p];
+        if (kFunction == null && parameterAnnotations.length == 0)
+          kFunction = ReflectJvmMapping.getKotlinFunction(method);
         parameterHandlers[p] =
-            parseParameter(p, parameterTypes[p], parameterAnnotationsArray[p], p == lastParameter);
+                parseParameter(p, parameterTypes[p], parameterAnnotations, kFunction, p == lastParameter);
       }
 
       if (relativeUrl == null && !gotUrl) {
@@ -333,13 +315,16 @@ final class RequestFactory {
       return builder.build();
     }
 
+    //增加参数[kFunction]以优化性能
     private @Nullable ParameterHandler<?> parseParameter(
-        int p, Type parameterType, @Nullable Annotation[] annotations, boolean allowContinuation) {
+            int p, Type parameterType, @Nullable Annotation[] annotations,
+            @org.jetbrains.annotations.Nullable KFunction<?> kFunction, boolean allowContinuation) {
       ParameterHandler<?> result = null;
       if (annotations != null) {
         //by lt 在这里处理了函数的参数的默认注解(不使用注解就相当于用了@Field(或@Query),但是只支持kt文件的interface),库中增加了kt反射
-        if (annotations.length == 0 && Utils.getRawType(parameterType) != Continuation.class) {
-          result = RequestFactoryKtUtil.handlerParameterFromNoAnnotation(this, p, parameterType, annotations);
+        if (annotations.length == 0 && !(allowContinuation && isKotlinSuspendFunction)) {
+          result = RequestFactoryKtUtil.handlerParameterFromNoAnnotation(
+                  this, p, parameterType, annotations, kFunction);
         } else {
           for (Annotation annotation : annotations) {
             ParameterHandler<?> annotationAction =

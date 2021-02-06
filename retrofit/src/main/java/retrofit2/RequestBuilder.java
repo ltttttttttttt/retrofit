@@ -15,18 +15,14 @@
  */
 package retrofit2;
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-import javax.annotation.Nullable;
-import okhttp3.FormBody;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import com.sun.istack.internal.NotNull;
+import okhttp3.*;
 import okio.Buffer;
 import okio.BufferedSink;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.regex.Pattern;
 
 final class RequestBuilder {
   private static final char[] HEX_DIGITS = {
@@ -226,6 +222,18 @@ final class RequestBuilder {
 
   <T> void addTag(Class<T> cls, @Nullable T value) {
     requestBuilder.tag(cls, value);
+  }
+
+  protected @org.jetbrains.annotations.Nullable FormBody.Builder getFormBuilder(){
+    return formBuilder;
+  }
+
+  protected @org.jetbrains.annotations.Nullable HttpUrl.Builder getUrlBuilder(){
+    return urlBuilder;
+  }
+
+  protected @NotNull String getMethod(){
+    return method;
   }
 
   Request.Builder get() {

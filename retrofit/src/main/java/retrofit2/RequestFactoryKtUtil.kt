@@ -2,22 +2,23 @@ package retrofit2
 
 import retrofit2.http.GET
 import retrofit2.http.POST
+import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
-import kotlin.reflect.jvm.kotlinFunction
+import java.net.URLDecoder
+import kotlin.reflect.KFunction
 
 /**
  * creator: lt  2020/9/23  lt.dygzs@qq.com
  * effect :
  * warning:
  */
-object RequestFactoryKtUtil {
+internal object RequestFactoryKtUtil {
 
     /**
      * 处理如果方法不加任何注解,则默认是@POST和@FormUrlEncoded,并且url为方法名,
      */
     @JvmStatic
-    @Suppress("EXPOSED_FUNCTION_RETURN_TYPE", "EXPOSED_RECEIVER_TYPE")
     fun RequestFactory.Builder.handlerParseMethodDefaultAnnotation() {
         if (retrofit.defaultAnnotationClass == POST::class.java) {
             if (parameterTypes.isNotEmpty() && !(parameterTypes.size == 1 && isKotlinSuspendFunction)) {
@@ -99,18 +100,18 @@ object RequestFactoryKtUtil {
      * 处理如果参数不加任何注解,则默认是@Field,并且value为参数名
      */
     @JvmStatic
-    @Suppress("EXPOSED_FUNCTION_RETURN_TYPE", "EXPOSED_RECEIVER_TYPE")
     fun RequestFactory.Builder.handlerParameterFromNoAnnotation(
             p: Int,
             type: Type,
-            annotations: Array<Annotation>
+            annotations: Array<Annotation>,
+            kFunction: KFunction<*>?
     ): ParameterHandler<*> {
         if (retrofit.defaultAnnotationClass == POST::class.java) {
             validateResolvableType(p, type)
             if (!isFormEncoded) {
                 throw Utils.parameterError(method, p, "@Field parameters can only be used with form encoding.")
             }
-            val ktFunction = method.kotlinFunction
+            val ktFunction = kFunction
                     ?: throw Utils.parameterError(method, p, "@Field not find, or not use kt file by lt 2333.")
             val name: String = ktFunction.parameters[p + 1].name
                     ?: throw Utils.parameterError(method, p, "parameter name is null.")
@@ -146,7 +147,7 @@ object RequestFactoryKtUtil {
             }
         } else if (retrofit.defaultAnnotationClass == GET::class.java) {
             validateResolvableType(p, type)
-            val ktFunction = method.kotlinFunction
+            val ktFunction = kFunction
                     ?: throw Utils.parameterError(method, p, "@Query not find, or not use kt file by lt 2333.")
             val name: String = ktFunction.parameters[p + 1].name
                     ?: throw Utils.parameterError(method, p, "parameter name is null.")
@@ -181,6 +182,65 @@ object RequestFactoryKtUtil {
             }
         } else {
             throw IllegalArgumentException("defaultAnnotation must set GET.class or POST.class")
+        }
+    }
+
+    var namesField: Field? = null
+    var valuesField: Field? = null
+    var encodedQueryNamesAndValuesField: Field? = null
+
+    /**
+     * 检查是否设置了合并参数,如果开启了则POST将Field合并到一块,GET将Query合并,且仅支持GET和POST
+     * 需要参数区分有无注解,且需要区分使用java和使用kt
+     */
+    @JvmStatic
+    fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: RequestBuilder) {
+        if (requestBuilder.method == "POST") {
+            val formBuilder = requestBuilder.formBuilder ?: return
+            val namesField = namesField ?: kotlin.run {
+                val field = formBuilder::class.java.getDeclaredField("names")
+                field.isAccessible = true
+                field
+            }
+            val valuesField = valuesField ?: kotlin.run {
+                val field = formBuilder::class.java.getDeclaredField("values")
+                field.isAccessible = true
+                field
+            }
+            val names = namesField.get(formBuilder) as? ArrayList<String>
+            val values = valuesField.get(formBuilder) as? ArrayList<String>
+            val size = names?.size ?: 0
+            if (size > 0) {
+                names!!
+                values!!
+                val map = HashMap<String, String>(size)
+                for (i in 0 until size) {
+                    map[names[i]] = values[i]
+                }
+                names.clear()
+                values.clear()
+                (parameterHandlers[0] as ParameterHandler<Any>).apply(requestBuilder, map)
+                names[0] = retrofit.singleParameterName!!
+            }
+        } else if (requestBuilder.method == "GET") {
+            val urlBuilder = requestBuilder.urlBuilder ?: return
+            val encodedQueryNamesAndValuesField = encodedQueryNamesAndValuesField ?: kotlin.run {
+                val field = urlBuilder::class.java.getDeclaredField("encodedQueryNamesAndValues")
+                field.isAccessible = true
+                field
+            }
+            val list = encodedQueryNamesAndValuesField.get(urlBuilder) as? ArrayList<String?> ?: return
+            val size = list.size
+            if (size > 0) {
+                val map = HashMap<String, String?>(size / 2)
+                for (i in 0 until size step 2) {
+                    val value = list[i + 1]
+                    map[list[i]!!] = if (value == null) null else URLDecoder.decode(value, "UTF-8")
+                }
+                list.clear()
+                (parameterHandlers[0] as ParameterHandler<Any>).apply(requestBuilder, map)
+                list.set(0, retrofit.singleParameterName)
+            }
         }
     }
 }

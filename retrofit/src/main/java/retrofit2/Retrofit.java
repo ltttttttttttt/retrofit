@@ -17,33 +17,18 @@ package retrofit2;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
-import java.net.URL;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import retrofit2.http.GET;
-import retrofit2.http.HTTP;
-import retrofit2.http.Header;
-import retrofit2.http.POST;
-import retrofit2.http.Url;
+import retrofit2.http.*;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 import static java.util.Collections.unmodifiableList;
 
@@ -77,6 +62,7 @@ public final class Retrofit {
   final @Nullable Executor callbackExecutor;
   final boolean validateEagerly;
   final Class<?> defaultAnnotationClass;
+  final @org.jetbrains.annotations.Nullable String singleParameterName;
 
   Retrofit(
       okhttp3.Call.Factory callFactory,
@@ -85,7 +71,8 @@ public final class Retrofit {
       List<CallAdapter.Factory> callAdapterFactories,
       @Nullable Executor callbackExecutor,
       boolean validateEagerly,
-      @NotNull Class<?> defaultAnnotationClass) {
+      @NotNull Class<?> defaultAnnotationClass,
+      @org.jetbrains.annotations.Nullable String singleParameterName) {
     this.callFactory = callFactory;
     this.baseUrl = baseUrl;
     this.converterFactories = converterFactories; // Copy+unmodifiable at call site.
@@ -93,6 +80,7 @@ public final class Retrofit {
     this.callbackExecutor = callbackExecutor;
     this.validateEagerly = validateEagerly;
     this.defaultAnnotationClass = defaultAnnotationClass;
+    this.singleParameterName = singleParameterName;
   }
 
   /**
@@ -514,7 +502,8 @@ public final class Retrofit {
     private final List<CallAdapter.Factory> callAdapterFactories = new ArrayList<>();
     private @Nullable Executor callbackExecutor;
     private boolean validateEagerly;
-    private @Nullable Class<?> defaultAnnotationClass = POST.class;
+    private @NotNull Class<?> defaultAnnotationClass = POST.class;
+    private @org.jetbrains.annotations.Nullable String singleParameterName = null;
 
     Builder(Platform platform) {
       this.platform = platform;
@@ -661,6 +650,14 @@ public final class Retrofit {
       return this;
     }
 
+    /**
+     * 设置是否使用入参整合,如果[isSingleParameter]为true就将所有入参合为一个并将[singleParameterName]设置为唯一参数的键值
+     */
+    public Builder setSingleParameter(boolean isSingleParameter, String singleParameterName){
+      this.singleParameterName = isSingleParameter ? singleParameterName : null;
+      return this;
+    }
+
     /** Add converter factory for serialization and deserialization of objects. */
     public Builder addConverterFactory(Converter.Factory factory) {
       converterFactories.add(Objects.requireNonNull(factory, "factory == null"));
@@ -749,8 +746,9 @@ public final class Retrofit {
           unmodifiableList(converterFactories),
           unmodifiableList(callAdapterFactories),
           callbackExecutor,
-          validateEagerly, 
-          defaultAnnotationClass);
+          validateEagerly,
+          defaultAnnotationClass,
+          singleParameterName);
     }
   }
 }
