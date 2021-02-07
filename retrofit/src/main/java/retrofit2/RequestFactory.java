@@ -16,6 +16,7 @@
 package retrofit2;
 
 import com.sun.istack.internal.NotNull;
+import kotlin.Pair;
 import kotlin.coroutines.Continuation;
 import kotlin.reflect.KFunction;
 import kotlin.reflect.jvm.ReflectJvmMapping;
@@ -160,14 +161,14 @@ final class RequestFactory {
       if (parameterTypes.length >= 1 && Utils.getRawType(parameterTypes[parameterTypes.length-1]) == Continuation.class) {
         isKotlinSuspendFunction = true;
       }
-      if(methodAnnotations.length == 0){
-        //by lt 如果方法没有加注解,就默认加上POST和FormUrlEncoded注解(或GET),并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
-        RequestFactoryKtUtil.handlerParseMethodDefaultAnnotation(this);
-      }
+      //by lt 如果方法没有加注解,就默认加上POST和FormUrlEncoded注解(或GET),并且method名字=url($代替/)(如果是kt就这样写:  `user$login`  )
+      Pair<Annotation, Class<?>> pair = RequestFactoryKtUtil.getMethodDefaultAnnotationAndHttpMethod(this);
+      if (pair.getFirst() != null)
+        parseMethodAnnotation(pair.getFirst());
       for (Annotation annotation : methodAnnotations) {
-        if(annotation instanceof POST && parameterTypes.length > 0
+        if (annotation instanceof POST && parameterTypes.length > 0
                 && ((POST) annotation).isUseFormUrlEncoded()
-                && !(parameterTypes.length == 1 && isKotlinSuspendFunction)){
+                && !(parameterTypes.length == 1 && isKotlinSuspendFunction)) {
           if (isMultipart) {
             throw methodError(method, "Only one encoding annotation is allowed.");
           }
@@ -202,7 +203,7 @@ final class RequestFactory {
         if (kFunction == null && parameterAnnotations.length == 0)
           kFunction = ReflectJvmMapping.getKotlinFunction(method);
         parameterHandlers[p] =
-                parseParameter(p, parameterTypes[p], parameterAnnotations, kFunction, p == lastParameter);
+                parseParameter(p, parameterTypes[p], parameterAnnotations, kFunction, p == lastParameter, pair.getSecond());
       }
 
       if (relativeUrl == null && !gotUrl) {
@@ -318,29 +319,35 @@ final class RequestFactory {
     //增加参数[kFunction]以优化性能
     private @Nullable ParameterHandler<?> parseParameter(
             int p, Type parameterType, @Nullable Annotation[] annotations,
-            @org.jetbrains.annotations.Nullable KFunction<?> kFunction, boolean allowContinuation) {
+            @org.jetbrains.annotations.Nullable KFunction<?> kFunction, boolean allowContinuation, Class<?> httpMethodClass) {
       ParameterHandler<?> result = null;
       if (annotations != null) {
         //by lt 在这里处理了函数的参数的默认注解(不使用注解就相当于用了@Field(或@Query),但是只支持kt文件的interface),库中增加了kt反射
-        if (annotations.length == 0 && !(allowContinuation && isKotlinSuspendFunction)) {
-          result = RequestFactoryKtUtil.handlerParameterFromNoAnnotation(
-                  this, p, parameterType, annotations, kFunction);
-        } else {
-          for (Annotation annotation : annotations) {
-            ParameterHandler<?> annotationAction =
-                    parseParameterAnnotation(p, parameterType, annotations, annotation);
-
-            if (annotationAction == null) {
-              continue;
+        if (!(allowContinuation && isKotlinSuspendFunction)) {
+          Annotation parameterDefaultAnnotation = RequestFactoryKtUtil.getParameterDefaultAnnotation(
+                  httpMethodClass, annotations, kFunction, p);
+          if (parameterDefaultAnnotation != null) {
+            Annotation[] oldAnnotations = annotations;
+            annotations = new Annotation[oldAnnotations.length + 1];
+            for (int i = 0; i < annotations.length; i++) {
+              annotations[i] = i == 0 ? parameterDefaultAnnotation : oldAnnotations[i - 1];
             }
-
-            if (result != null) {
-              throw parameterError(
-                      method, p, "Multiple Retrofit annotations found, only one allowed.");
-            }
-
-            result = annotationAction;
           }
+        }
+        for (Annotation annotation : annotations) {
+          ParameterHandler<?> annotationAction =
+                  parseParameterAnnotation(p, parameterType, annotations, annotation);
+
+          if (annotationAction == null) {
+            continue;
+          }
+
+          if (result != null) {
+            throw parameterError(
+                    method, p, "Multiple Retrofit annotations found, only one allowed.");
+          }
+
+          result = annotationAction;
         }
       }
 
