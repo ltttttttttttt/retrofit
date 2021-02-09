@@ -288,9 +288,9 @@ internal fun RequestFactory.Builder.getMethodDefaultAnnotationAndHttpMethod(): P
                 }
                 isFormEncoded = true
             }
-            DefaultPOST(method.name) to POST::class.java
+            DefaultPOST(method.name.replace('$', '\\')) to POST::class.java
         }
-        GET::class.java -> DefaultGET(method.name) to GET::class.java
+        GET::class.java -> DefaultGET(method.name.replace('$', '\\')) to GET::class.java
         else -> throw IllegalArgumentException("defaultAnnotation must set GET.class or POST.class")
     }
 }
