@@ -8,6 +8,8 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.net.URLDecoder
 import kotlin.reflect.KFunction
+import kotlin.reflect.jvm.javaType
+import kotlin.reflect.typeOf
 
 /**
  * creator: lt  2020/9/23  lt.dygzs@qq.com
@@ -18,6 +20,7 @@ import kotlin.reflect.KFunction
 internal var namesField: Field? = null
 internal var valuesField: Field? = null
 internal var encodedQueryNamesAndValuesField: Field? = null
+internal var mapType: Type? = null
 
 private val httpMethodAnnotations = arrayOf(
         GET::class.java,
@@ -210,7 +213,8 @@ internal fun RequestFactory.Builder.handlerParameterFromNoAnnotation(
  * 检查是否设置了合并参数,如果开启了则POST将Field合并到一块,GET将Query合并,且仅支持GET和POST
  * 需要参数区分有无注解,且需要区分使用java和使用kt
  */
-internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: RequestBuilder) {
+@OptIn(ExperimentalStdlibApi::class)
+internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: RequestBuilder, singleParameterName: String) {
     if (requestBuilder.method == "POST") {
         val formBuilder = requestBuilder.formBuilder ?: return
         val namesField = namesField ?: kotlin.run {
@@ -223,20 +227,24 @@ internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: Reque
             field.isAccessible = true
             field
         }
-        val names = namesField.get(formBuilder) as? ArrayList<String>
-        val values = valuesField.get(formBuilder) as? ArrayList<String>
+        val names = namesField.get(formBuilder) as? ArrayList<String?>
+        val values = valuesField.get(formBuilder) as? ArrayList<String?>
         val size = names?.size ?: 0
         if (size > 0) {
             names!!
             values!!
-            val map = HashMap<String, String>(size)
+            val map = HashMap<String?, String?>(size)
             for (i in 0 until size) {
                 map[names[i]] = values[i]
             }
             names.clear()
             values.clear()
-            (parameterHandlers[0] as ParameterHandler<Any>).apply(requestBuilder, map)
-            names[0] = retrofit.singleParameterName!!
+            names.add(singleParameterName)
+            if (mapType == null)
+                mapType = typeOf<HashMap<String, String>>().javaType
+            values.add(
+                    retrofit.stringConverter<Any>(mapType, arrayOf(DefaultField(singleParameterName))).convert(map)
+            )
         }
     } else if (requestBuilder.method == "GET") {
         val urlBuilder = requestBuilder.urlBuilder ?: return
@@ -254,8 +262,12 @@ internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: Reque
                 map[list[i]!!] = if (value == null) null else URLDecoder.decode(value, "UTF-8")
             }
             list.clear()
-            (parameterHandlers[0] as ParameterHandler<Any>).apply(requestBuilder, map)
-            list.set(0, retrofit.singleParameterName)
+            list.add(singleParameterName)
+            if (mapType == null)
+                mapType = typeOf<HashMap<String, String>>().javaType
+            list.add(
+                    retrofit.stringConverter<Any>(mapType, arrayOf(DefaultQuery(singleParameterName))).convert(map)
+            )
         }
     }
 }

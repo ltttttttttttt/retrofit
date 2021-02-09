@@ -16,24 +16,57 @@
 package retrofit2;
 
 import com.sun.istack.internal.NotNull;
-import kotlin.Pair;
-import kotlin.coroutines.Continuation;
-import kotlin.reflect.KFunction;
-import kotlin.reflect.jvm.ReflectJvmMapping;
-import okhttp3.Headers;
-import okhttp3.*;
-import retrofit2.http.*;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+
+import kotlin.Pair;
+import kotlin.coroutines.Continuation;
+import kotlin.reflect.KFunction;
+import kotlin.reflect.jvm.ReflectJvmMapping;
+import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.http.Body;
+import retrofit2.http.DELETE;
+import retrofit2.http.Field;
+import retrofit2.http.FieldMap;
+import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
+import retrofit2.http.HEAD;
+import retrofit2.http.HTTP;
+import retrofit2.http.Header;
+import retrofit2.http.HeaderMap;
+import retrofit2.http.MergeParameter;
+import retrofit2.http.Multipart;
+import retrofit2.http.NotMergeParameter;
+import retrofit2.http.OPTIONS;
+import retrofit2.http.PATCH;
+import retrofit2.http.POST;
+import retrofit2.http.PUT;
+import retrofit2.http.Part;
+import retrofit2.http.PartMap;
+import retrofit2.http.Path;
+import retrofit2.http.Query;
+import retrofit2.http.QueryMap;
+import retrofit2.http.QueryName;
+import retrofit2.http.Tag;
+import retrofit2.http.Url;
 
 import static retrofit2.Utils.methodError;
 import static retrofit2.Utils.parameterError;
@@ -107,9 +140,27 @@ final class RequestFactory {
       handlers[p].apply(requestBuilder, args[p]);
     }
 
-    if (retrofit.singleParameterName != null) {
-      RequestFactoryKtUtil.handlerSingleParameterHandlers(this, requestBuilder);
+    //by lt 检查设置合并参数的配置和相应操作
+    boolean haveHotMergeParameterAnnotation = false;
+    MergeParameter mergeParameterAnnotation = null;
+    for (Annotation annotation : method.getAnnotations()) {
+      if (annotation instanceof MergeParameter) {
+        mergeParameterAnnotation = (MergeParameter) annotation;
+      } else if (annotation instanceof NotMergeParameter) {
+        haveHotMergeParameterAnnotation = true;
+      }
     }
+    if (mergeParameterAnnotation != null || (retrofit.singleParameterName != null && !haveHotMergeParameterAnnotation)) {
+      String singleParameterName = null;
+      if (mergeParameterAnnotation != null)
+        singleParameterName = mergeParameterAnnotation.value();
+      if (singleParameterName == null || singleParameterName.length() == 0)
+        singleParameterName = retrofit.singleParameterName;
+      if (singleParameterName == null || singleParameterName.length() == 0)
+        throw new NullPointerException("设置了合并参数,但合并参数的名字为空");
+      RequestFactoryKtUtil.handlerSingleParameterHandlers(this, requestBuilder, singleParameterName);
+    }
+
     return requestBuilder.get().tag(Invocation.class, new Invocation(method, argumentList)).build();
   }
 

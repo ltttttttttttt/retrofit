@@ -45,14 +45,14 @@ class FieldCallTest {
     fun singleFormEncodedPOST() {
         val request = buildRequestSinglePOST(Example::class.java, "bar1", "pong1")
         val body = request.body()
-        assertBody(body, "str=%7Bfoo2%3Dbar1%2C%20ping%3Dpong1%7D")
+        assertBody(body, "str={foo2=bar1, ping=pong1}")
     }
 
     @Test
     fun singleFormEncodedGET() {
         val request = buildRequestSingleGET(Example::class.java, "bar 2", "pong2")
         println(request.url().url().query)
-        assert(request.url().url().query == "str=%7Bfoo2%3Dbar%202%2C%20ping%3Dpong2%7D")
+        assert(request.url().url().query == "str={foo2=bar 2, ping=pong2}")
     }
 
     companion object {
