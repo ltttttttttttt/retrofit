@@ -21,7 +21,7 @@ Brief function description in English:
 Download
 --------
 
-Download [the latest JAR][2] or grab from Maven central at the coordinates `com.github.ltttttttttttt:retrofit:1.1.9`.
+Download [the latest JAR][2] or grab from Maven central at the coordinates `com.github.ltttttttttttt:retrofit:[![](https://jitpack.io/v/ltttttttttttt/retrofit.svg)](https://jitpack.io/#ltttttttttttt/retrofit)`.
 
 Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
 
