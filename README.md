@@ -7,10 +7,10 @@ For more information please see [the website][1].
 
 使用说明:https://blog.csdn.net/qq_33505109/article/details/108767068
 
-中文简要功能说明:\n
-1.可以不写注解就完成方法的声明\n
-2.程序运行中途可以修改BaseUrl\n
-3.将方法的所有参数合并到一个参数(某些后端需求)\n
+中文简要功能说明:
+1. 可以不写注解就完成方法的声明
+2. 程序运行中途可以修改BaseUrl
+3. 将方法的所有参数合并到一个参数(某些后端需求)
 
 Brief function description in English:
 1. You can complete the method declaration without writing comments
