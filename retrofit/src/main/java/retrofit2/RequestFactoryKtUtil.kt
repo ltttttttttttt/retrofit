@@ -29,6 +29,7 @@ private val httpMethodAnnotations = arrayOf(
         OPTIONS::class.java,
         PUT::class.java,
         DELETE::class.java,
+        Multipart::class.java,
 )
 
 private val httpParameterAnnotations = arrayOf(
