@@ -278,8 +278,9 @@ internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: Reque
  */
 internal fun RequestFactory.Builder.getMethodDefaultAnnotationAndHttpMethod(): Pair<Annotation?, Class<*>> {
     methodAnnotations.forEach {
-        if (httpMethodAnnotations.contains(it))
-            return null to it::class.java
+        val annotationCLass = it::class.java.interfaces[0]
+        if (it != null && httpMethodAnnotations.contains(annotationCLass))
+            return null to annotationCLass
     }
     return when (retrofit.defaultAnnotationClass) {
         POST::class.java -> {
@@ -305,7 +306,7 @@ internal fun getParameterDefaultAnnotation(httpMethodClass: Class<*>,
                                            position: Int
 ): Annotation? {
     annotations.forEach {
-        if (httpParameterAnnotations.contains(it))
+        if (httpParameterAnnotations.contains(it::class.java.interfaces[0]))
             return null
     }
     return when (httpMethodClass) {
