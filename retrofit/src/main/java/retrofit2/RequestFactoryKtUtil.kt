@@ -38,6 +38,7 @@ private val httpParameterAnnotations = arrayOf(
         Url::class.java,
         Header::class.java,
         Part::class.java,
+        Path::class.java,
 )
 
 /**
@@ -305,10 +306,7 @@ internal fun getParameterDefaultAnnotation(httpMethodClass: Class<*>,
                                            kFunction: KFunction<*>?,
                                            position: Int
 ): Annotation? {
-    annotations.forEach {
-        if (httpParameterAnnotations.contains(it::class.java.interfaces[0]))
-            return null
-    }
+    if (parameterAnnotationContainsRequestAnnotation(annotations)) return null
     return when (httpMethodClass) {
         POST::class.java -> DefaultField(kFunction?.parameters?.get(position + 1)?.name
                 ?: throw IllegalStateException("kFunction not find, not use kt file by lt 2333."))
@@ -316,4 +314,15 @@ internal fun getParameterDefaultAnnotation(httpMethodClass: Class<*>,
                 ?: throw IllegalStateException("kFunction not find, or not use kt file by lt 2333."))
         else -> null
     }
+}
+
+/**
+ * 查看参数注解中是否含有请求的注解
+ */
+internal fun parameterAnnotationContainsRequestAnnotation(annotations: Array<Annotation>): Boolean {
+    annotations.forEach {
+        if (httpParameterAnnotations.contains(it::class.java.interfaces[0]))
+            return true
+    }
+    return false
 }

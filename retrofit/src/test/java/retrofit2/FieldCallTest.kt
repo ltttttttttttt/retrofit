@@ -24,9 +24,10 @@ import org.junit.Test
 import retrofit2.helpers.ToStringConverterFactory
 import retrofit2.http.GET
 import java.io.IOException
+import javax.annotation.Nullable
 
 interface Example {
-    fun method(foo2: String?, ping: String?): Call<ResponseBody>
+    fun method(@Nullable foo2: String?, ping: String?): Call<ResponseBody>
 }
 
 /**
