@@ -17,6 +17,7 @@ package retrofit2;
 
 import okhttp3.*;
 import okio.Buffer;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import retrofit2.helpers.NullObjectConverterFactory;
@@ -202,20 +203,23 @@ public final class RequestFactoryTest {
   }
 
   @Test
+  //有了自动方法注解后,该方法不会报错了
   public void lackingMethod() {
     class Example {
       Call<ResponseBody> method() {
         return null;
       }
     }
-    try {
+    /*try {
       buildRequest(Example.class);
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e)
           .hasMessage(
               "HTTP method annotation is required (e.g., @GET, @POST, etc.).\n    for method Example.method");
-    }
+    }*/
+    buildRequest(Example.class);
+    Assert.assertTrue(true);
   }
 
   @Test
@@ -295,7 +299,7 @@ public final class RequestFactoryTest {
   @Test
   public void implicitFormEncodingByFieldForbidden() {
     class Example {
-      @POST("/") //
+      @POST(value = "/",isUseFormUrlEncoded = false) //
       Call<ResponseBody> method(@Field("a") int a) {
         return null;
       }
@@ -313,7 +317,7 @@ public final class RequestFactoryTest {
   @Test
   public void implicitFormEncodingByFieldMapForbidden() {
     class Example {
-      @POST("/") //
+      @POST(value = "/",isUseFormUrlEncoded = false) //
       Call<ResponseBody> method(@FieldMap Map<String, String> a) {
         return null;
       }
@@ -434,7 +438,10 @@ public final class RequestFactoryTest {
     } catch (IllegalArgumentException e) {
       assertThat(e)
           .hasMessage(
-              "No Retrofit annotation found. (parameter #1)\n    for method Example.method");
+              "Retrofit method annotation is required (e.g., @GET, @POST, etc.).\n" +
+                      "Or no Retrofit parameter annotation found.\n" +
+                      "Or use Kotlin interface file.\n" +
+                      "    for method Example.method(parameter #1)");
     }
   }
 

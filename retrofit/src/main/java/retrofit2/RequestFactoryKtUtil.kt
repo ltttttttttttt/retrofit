@@ -31,6 +31,7 @@ private val httpMethodAnnotations = arrayOf(
         DELETE::class.java,
         Multipart::class.java,
         HTTP::class.java,
+        PATCH::class.java,
 )
 
 private val httpParameterAnnotations = arrayOf(
@@ -45,6 +46,8 @@ private val httpParameterAnnotations = arrayOf(
         PartMap::class.java,
         HeaderMap::class.java,
         FieldMap::class.java,
+        QueryName::class.java,
+        Tag::class.java,
 )
 
 /**

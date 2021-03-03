@@ -20,6 +20,7 @@ import kotlin.Pair;
 import kotlin.coroutines.Continuation;
 import kotlin.reflect.KFunction;
 import kotlin.reflect.jvm.ReflectJvmMapping;
+import kotlin.reflect.jvm.internal.KotlinReflectionInternalError;
 import okhttp3.Headers;
 import okhttp3.*;
 import retrofit2.http.*;
@@ -52,8 +53,10 @@ final class RequestFactory {
   private final boolean hasBody;
   private final boolean isFormEncoded;
   private final boolean isMultipart;
+  @SuppressWarnings("ProtectedMembersInFinalClass")
   protected final ParameterHandler<?>[] parameterHandlers;
   final boolean isKotlinSuspendFunction;
+  @SuppressWarnings("ProtectedMembersInFinalClass")
   protected final @NotNull Retrofit retrofit;
 
   RequestFactory(Builder builder) {
@@ -191,7 +194,7 @@ final class RequestFactory {
           isFormEncoded = true;
           for (Annotation[] annotations : parameterAnnotationsArray) {
             Class<?> clazz = RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(annotations);
-            if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && clazz != Field.class)) {
+            if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && (clazz != Field.class && clazz != FieldMap.class))) {
               isFormEncoded = false;
               break;
             }
@@ -224,7 +227,18 @@ final class RequestFactory {
       for (int p = 0, lastParameter = parameterCount - 1; p < parameterCount; p++) {
         Annotation[] parameterAnnotations = parameterAnnotationsArray[p];
         if (kFunction == null && RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(parameterAnnotations) == null)
-          kFunction = ReflectJvmMapping.getKotlinFunction(method);
+          try {
+            kFunction = ReflectJvmMapping.getKotlinFunction(method);
+          } catch (KotlinReflectionInternalError e) {
+            throw new IllegalArgumentException("Retrofit method annotation is required (e.g., @GET, @POST, etc.).\n"
+                    + "Or no Retrofit parameter annotation found.\n"
+                    + "Or use Kotlin interface file."
+                    + "\n    for method "
+                    + method.getDeclaringClass().getSimpleName()
+                    + "."
+                    + method.getName()
+                    + "(parameter #" + (p + 1) + ")", e);
+          }
         parameterHandlers[p] =
                 parseParameter(p, parameterTypes[p], parameterAnnotations, kFunction, p == lastParameter, pair.getSecond());
       }

@@ -9,9 +9,10 @@ import java.lang.annotation.Annotation;
  * effect : 默认的Query注解,默认注解使用
  * warning:
  */
+@SuppressWarnings("BadAnnotationImplementation")
 class DefaultQuery implements Query {
-    String value;
-    boolean encoded;
+    final String value;
+    final boolean encoded;
 
     public DefaultQuery(String value) {
         this(value, false);

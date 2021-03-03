@@ -9,9 +9,10 @@ import java.lang.annotation.Annotation;
  * effect : 默认的Field注解,默认注解使用
  * warning:
  */
+@SuppressWarnings("BadAnnotationImplementation")
 class DefaultField implements Field {
-    String value;
-    boolean encoded;
+    final String value;
+    final boolean encoded;
 
     public DefaultField(String value) {
         this(value, false);

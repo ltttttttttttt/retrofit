@@ -9,9 +9,10 @@ import java.lang.annotation.Annotation;
  * effect : 默认的POST注解,默认注解使用
  * warning:
  */
+@SuppressWarnings("BadAnnotationImplementation")
 class DefaultPOST implements POST {
-    String value;
-    boolean useFormUrlEncoded;
+    final String value;
+    final boolean useFormUrlEncoded;
 
     public DefaultPOST(String value) {
         this(value, true);

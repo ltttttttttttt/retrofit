@@ -9,8 +9,9 @@ import java.lang.annotation.Annotation;
  * effect : 默认的GET注解,默认注解使用
  * warning:
  */
+@SuppressWarnings("BadAnnotationImplementation")
 class DefaultGET implements GET {
-    String value;
+    final String value;
 
     public DefaultGET(String value) {
         this.value = value;
