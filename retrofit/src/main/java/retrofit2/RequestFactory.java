@@ -187,10 +187,15 @@ final class RequestFactory {
         if (annotation instanceof POST && parameterTypes.length > 0
                 && ((POST) annotation).isUseFormUrlEncoded()
                 && !(parameterTypes.length == 1 && isKotlinSuspendFunction)) {
-          if (isMultipart) {
-            throw methodError(method, "Only one encoding annotation is allowed.");
-          }
+          //在这里需要判断,是否是所有参数都有非Field的参数注解,就false;只要有一个参数没有参数注解,且默认注解为POST就为true,其他情况为true
           isFormEncoded = true;
+          for (Annotation[] annotations : parameterAnnotationsArray) {
+            Class<?> clazz = RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(annotations);
+            if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && clazz != Field.class)) {
+              isFormEncoded = false;
+              break;
+            }
+          }
         }
         parseMethodAnnotation(annotation);
       }
@@ -218,7 +223,7 @@ final class RequestFactory {
       KFunction<?> kFunction = null;
       for (int p = 0, lastParameter = parameterCount - 1; p < parameterCount; p++) {
         Annotation[] parameterAnnotations = parameterAnnotationsArray[p];
-        if (kFunction == null && !RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(parameterAnnotations))
+        if (kFunction == null && RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(parameterAnnotations) == null)
           kFunction = ReflectJvmMapping.getKotlinFunction(method);
         parameterHandlers[p] =
                 parseParameter(p, parameterTypes[p], parameterAnnotations, kFunction, p == lastParameter, pair.getSecond());

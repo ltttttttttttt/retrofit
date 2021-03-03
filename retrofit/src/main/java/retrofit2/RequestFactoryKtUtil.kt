@@ -30,6 +30,7 @@ private val httpMethodAnnotations = arrayOf(
         PUT::class.java,
         DELETE::class.java,
         Multipart::class.java,
+        HTTP::class.java,
 )
 
 private val httpParameterAnnotations = arrayOf(
@@ -39,6 +40,11 @@ private val httpParameterAnnotations = arrayOf(
         Header::class.java,
         Part::class.java,
         Path::class.java,
+        Body::class.java,
+        QueryMap::class.java,
+        PartMap::class.java,
+        HeaderMap::class.java,
+        FieldMap::class.java,
 )
 
 /**
@@ -306,7 +312,7 @@ internal fun getParameterDefaultAnnotation(httpMethodClass: Class<*>,
                                            kFunction: KFunction<*>?,
                                            position: Int
 ): Annotation? {
-    if (parameterAnnotationContainsRequestAnnotation(annotations)) return null
+    if (parameterAnnotationContainsRequestAnnotation(annotations) != null) return null
     return when (httpMethodClass) {
         POST::class.java -> DefaultField(kFunction?.parameters?.get(position + 1)?.name
                 ?: throw IllegalStateException("kFunction not find, not use kt file by lt 2333."))
@@ -317,12 +323,14 @@ internal fun getParameterDefaultAnnotation(httpMethodClass: Class<*>,
 }
 
 /**
- * 查看参数注解中是否含有请求的注解
+ * 查看参数注解中是否含有请求的注解,并将找到的注解返回出去
+ * 返回null表示没找到请求参数注解
  */
-internal fun parameterAnnotationContainsRequestAnnotation(annotations: Array<Annotation>): Boolean {
+internal fun parameterAnnotationContainsRequestAnnotation(annotations: Array<Annotation>): Class<*>? {
     annotations.forEach {
-        if (httpParameterAnnotations.contains(it::class.java.interfaces[0]))
-            return true
+        val clazz = it::class.java.interfaces[0]
+        if (httpParameterAnnotations.contains(clazz))
+            return clazz
     }
-    return false
+    return null
 }

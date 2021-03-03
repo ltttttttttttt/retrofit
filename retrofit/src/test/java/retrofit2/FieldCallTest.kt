@@ -22,12 +22,30 @@ import okio.Buffer
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import retrofit2.helpers.ToStringConverterFactory
+import retrofit2.http.Field
 import retrofit2.http.GET
+import retrofit2.http.Query
 import java.io.IOException
 import javax.annotation.Nullable
 
 interface Example {
     fun method(@Nullable foo2: String?, ping: String?): Call<ResponseBody>
+}
+
+interface Example2 {
+    fun method(@Nullable @Field("foo") foo2: String?, ping: String?): Call<ResponseBody>
+}
+
+interface Example3 {
+    fun method(@Field("foo") foo2: String?, ping: String?): Call<ResponseBody>
+}
+
+interface Example4 {
+    fun method(@Nullable @Query("foo") foo2: String?, ping: String?): Call<ResponseBody>
+}
+
+interface Example5 {
+    fun method(@Query("foo") foo2: String?, ping: String?): Call<ResponseBody>
 }
 
 /**
@@ -43,6 +61,22 @@ class FieldCallTest {
     }
 
     @Test
+    fun simpleFormEncoded2() {
+        val request = buildRequest(Example2::class.java, "bar", "pong")
+        val body = request.body()
+        assertBody(body, "foo=bar&ping=pong")
+        Assertions.assertThat(body!!.contentType().toString()).isEqualTo("application/x-www-form-urlencoded")
+    }
+
+    @Test
+    fun simpleFormEncoded3() {
+        val request = buildRequest(Example3::class.java, "bar", "pong")
+        val body = request.body()
+        assertBody(body, "foo=bar&ping=pong")
+        Assertions.assertThat(body!!.contentType().toString()).isEqualTo("application/x-www-form-urlencoded")
+    }
+
+    @Test
     fun singleFormEncodedPOST() {
         val request = buildRequestSinglePOST(Example::class.java, "bar1", "pong1")
         val body = request.body()
@@ -50,10 +84,35 @@ class FieldCallTest {
     }
 
     @Test
+    fun singleFormEncodedPOST2() {
+        val request = buildRequestSinglePOST(Example2::class.java, "bar1", "pong1")
+        val body = request.body()
+        assertBody(body, "str={ping=pong1, foo=bar1}")
+    }
+
+    @Test
+    fun singleFormEncodedPOST3() {
+        val request = buildRequestSinglePOST(Example3::class.java, "bar1", "pong1")
+        val body = request.body()
+        assertBody(body, "str={ping=pong1, foo=bar1}")
+    }
+
+    @Test
     fun singleFormEncodedGET() {
         val request = buildRequestSingleGET(Example::class.java, "bar 2", "pong2")
-        println(request.url().url().query)
         assert(request.url().url().query == "str={foo2=bar 2, ping=pong2}")
+    }
+
+    @Test
+    fun singleFormEncodedGET2() {
+        val request = buildRequestSingleGET(Example4::class.java, "bar 2", "pong2")
+        assert(request.url().url().query == "str={ping=pong2, foo=bar 2}")
+    }
+
+    @Test
+    fun singleFormEncodedGET3() {
+        val request = buildRequestSingleGET(Example5::class.java, "bar 2", "pong2")
+        assert(request.url().url().query == "str={ping=pong2, foo=bar 2}")
     }
 
     companion object {
