@@ -63,6 +63,7 @@ public final class Retrofit {
   final boolean validateEagerly;
   final Class<?> defaultAnnotationClass;
   final @org.jetbrains.annotations.Nullable String singleParameterName;
+  final @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory;
 
   Retrofit(
       okhttp3.Call.Factory callFactory,
@@ -72,7 +73,8 @@ public final class Retrofit {
       @Nullable Executor callbackExecutor,
       boolean validateEagerly,
       @NotNull Class<?> defaultAnnotationClass,
-      @org.jetbrains.annotations.Nullable String singleParameterName) {
+      @org.jetbrains.annotations.Nullable String singleParameterName,
+      @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory) {
     this.callFactory = callFactory;
     this.baseUrl = baseUrl;
     this.converterFactories = converterFactories; // Copy+unmodifiable at call site.
@@ -81,6 +83,7 @@ public final class Retrofit {
     this.validateEagerly = validateEagerly;
     this.defaultAnnotationClass = defaultAnnotationClass;
     this.singleParameterName = singleParameterName;
+    this.otherServiceMethodFactory = otherServiceMethodFactory;
   }
 
   /**
@@ -504,6 +507,7 @@ public final class Retrofit {
     private boolean validateEagerly;
     private @NotNull Class<?> defaultAnnotationClass = POST.class;
     private @org.jetbrains.annotations.Nullable String singleParameterName = null;
+    private @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory = null;
 
     Builder(Platform platform) {
       this.platform = platform;
@@ -653,8 +657,16 @@ public final class Retrofit {
     /**
      * 设置是否使用入参整合,如果[isSingleParameter]为true就将所有入参合为一个并将[singleParameterName]设置为唯一参数的键值
      */
-    public Builder setSingleParameter(boolean isSingleParameter, String singleParameterName){
-      this.singleParameterName = isSingleParameter ? singleParameterName : null;
+    public Builder setSingleParameter(String singleParameterName) {
+      this.singleParameterName = singleParameterName;
+      return this;
+    }
+
+    /**
+     * 设置动态代理方法转对象的工厂,可以自定义Retrofit.Call的生成
+     */
+    public Builder setServiceMethodFactory(OtherServiceMethod.Factory<?> otherServiceMethodFactory) {
+      this.otherServiceMethodFactory = otherServiceMethodFactory;
       return this;
     }
 
@@ -741,14 +753,15 @@ public final class Retrofit {
       converterFactories.addAll(platform.defaultConverterFactories());
 
       return new Retrofit(
-          callFactory,
-          baseUrl,
-          unmodifiableList(converterFactories),
-          unmodifiableList(callAdapterFactories),
-          callbackExecutor,
-          validateEagerly,
-          defaultAnnotationClass,
-          singleParameterName);
+              callFactory,
+              baseUrl,
+              unmodifiableList(converterFactories),
+              unmodifiableList(callAdapterFactories),
+              callbackExecutor,
+              validateEagerly,
+              defaultAnnotationClass,
+              singleParameterName,
+              otherServiceMethodFactory);
     }
   }
 }

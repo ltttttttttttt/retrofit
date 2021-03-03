@@ -15,16 +15,17 @@
  */
 package retrofit2;
 
-import static retrofit2.Utils.getRawType;
-import static retrofit2.Utils.methodError;
+import kotlin.coroutines.Continuation;
+import okhttp3.ResponseBody;
 
+import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import javax.annotation.Nullable;
-import kotlin.coroutines.Continuation;
-import okhttp3.ResponseBody;
+
+import static retrofit2.Utils.getRawType;
+import static retrofit2.Utils.methodError;
 
 /** Adapts an invocation of an interface method into an HTTP call. */
 abstract class HttpServiceMethod<ResponseT, ReturnT> extends ServiceMethod<ReturnT> {
@@ -107,7 +108,7 @@ abstract class HttpServiceMethod<ResponseT, ReturnT> extends ServiceMethod<Retur
     }
   }
 
-  private static <ResponseT, ReturnT> CallAdapter<ResponseT, ReturnT> createCallAdapter(
+  protected static <ResponseT, ReturnT> CallAdapter<ResponseT, ReturnT> createCallAdapter(
       Retrofit retrofit, Method method, Type returnType, Annotation[] annotations) {
     try {
       //noinspection unchecked

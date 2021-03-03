@@ -39,25 +39,25 @@ import java.util.regex.Pattern;
 import static retrofit2.Utils.methodError;
 import static retrofit2.Utils.parameterError;
 
-final class RequestFactory {
+public final class RequestFactory {
   static RequestFactory parseAnnotations(Retrofit retrofit, Method method) {
     return new Builder(retrofit, method).build();
   }
 
-  private final Method method;
-  private final HttpUrl baseUrl;
-  final String httpMethod;
-  private final @Nullable String relativeUrl;
-  private final @Nullable Headers headers;
-  private final @Nullable MediaType contentType;
-  private final boolean hasBody;
-  private final boolean isFormEncoded;
-  private final boolean isMultipart;
+  public final Method method;
+  public final HttpUrl baseUrl;
+  public final String httpMethod;
+  public final @Nullable String relativeUrl;
+  public final @Nullable Headers headers;
+  public final @Nullable MediaType contentType;
+  public final boolean hasBody;
+  public final boolean isFormEncoded;
+  public final boolean isMultipart;
   @SuppressWarnings("ProtectedMembersInFinalClass")
-  protected final ParameterHandler<?>[] parameterHandlers;
-  final boolean isKotlinSuspendFunction;
+  public final ParameterHandler<?>[] parameterHandlers;
+  public final boolean isKotlinSuspendFunction;
   @SuppressWarnings("ProtectedMembersInFinalClass")
-  protected final @NotNull Retrofit retrofit;
+  public final @NotNull Retrofit retrofit;
 
   RequestFactory(Builder builder) {
     method = builder.method;
@@ -232,7 +232,7 @@ final class RequestFactory {
           } catch (KotlinReflectionInternalError e) {
             throw new IllegalArgumentException("Retrofit method annotation is required (e.g., @GET, @POST, etc.).\n"
                     + "Or no Retrofit parameter annotation found.\n"
-                    + "Or use Kotlin interface file."
+                    + "Or use Kotlin interface file.ReadMe:https://github.com/ltttttttttttt/retrofit"
                     + "\n    for method "
                     + method.getDeclaringClass().getSimpleName()
                     + "."
