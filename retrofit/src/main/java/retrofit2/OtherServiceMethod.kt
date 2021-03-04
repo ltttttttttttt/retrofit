@@ -16,17 +16,21 @@ abstract class OtherServiceMethod<T>(
 ) : ServiceMethod<T>() {
 
     interface Factory<T> {
+
+        /**
+         * 创建OtherServiceMethod,如果自身可以处理就返回,否则可以返回null使用Retrofit默认的
+         */
         fun createServiceMethod(
                 retrofit: Retrofit,
                 method: Method,
                 requestFactory: RequestFactory,
-        ): OtherServiceMethod<T>
+        ): OtherServiceMethod<T>?
     }
 
-    abstract fun createCall(): Call<T>
+    abstract fun createCall(args: Array<out Any>): Call<T>
 
     override fun invoke(args: Array<out Any>): T? {
         val callAdapter = HttpServiceMethod.createCallAdapter<T, T?>(retrofit, method, adapterType, annotations)
-        return callAdapter.adapt(createCall())
+        return callAdapter.adapt(createCall(args))
     }
 }
