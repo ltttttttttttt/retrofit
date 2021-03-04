@@ -440,7 +440,7 @@ public final class RequestFactoryTest {
           .hasMessage(
               "Retrofit method annotation is required (e.g., @GET, @POST, etc.).\n" +
                       "Or no Retrofit parameter annotation found.\n" +
-                      "Or use Kotlin interface file.\n" +
+                      "Or use Kotlin interface file.ReadMe:https://github.com/ltttttttttttt/retrofit\n" +
                       "    for method Example.method(parameter #1)");
     }
   }

@@ -126,7 +126,7 @@ class FieldCallTest {
         fun <T> buildRequestSinglePOST(cls: Class<T>?, vararg args: Any?): Request {
             val retrofitBuilder = Retrofit.Builder()
                     .baseUrl("http://example.com/")
-                    .setSingleParameter(true, "str")
+                    .setSingleParameter("str")
                     .addConverterFactory(ToStringConverterFactory())
             return buildRequest(cls, retrofitBuilder, *args)
         }
@@ -134,7 +134,7 @@ class FieldCallTest {
         fun <T> buildRequestSingleGET(cls: Class<T>?, vararg args: Any?): Request {
             val retrofitBuilder = Retrofit.Builder()
                     .baseUrl("http://example.com/")
-                    .setSingleParameter(true, "str")
+                    .setSingleParameter("str")
                     .defaultAnnotation(GET::class.java)
                     .addConverterFactory(ToStringConverterFactory())
             return buildRequest(cls, retrofitBuilder, *args)

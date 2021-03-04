@@ -44,20 +44,21 @@ public final class RequestFactory {
     return new Builder(retrofit, method).build();
   }
 
-  public final Method method;
-  public final HttpUrl baseUrl;
-  public final String httpMethod;
-  public final @Nullable String relativeUrl;
-  public final @Nullable Headers headers;
-  public final @Nullable MediaType contentType;
-  public final boolean hasBody;
-  public final boolean isFormEncoded;
-  public final boolean isMultipart;
+  private final Method method;
+  private final HttpUrl baseUrl;
+  final String httpMethod;
+  private final @Nullable String relativeUrl;
+  private final @Nullable Headers headers;
+  private final @Nullable MediaType contentType;
+  private final boolean hasBody;
+  private final boolean isFormEncoded;
+  private final boolean isMultipart;
   @SuppressWarnings("ProtectedMembersInFinalClass")
-  public final ParameterHandler<?>[] parameterHandlers;
-  public final boolean isKotlinSuspendFunction;
+  protected final ParameterHandler<?>[] parameterHandlers;
+  final boolean isKotlinSuspendFunction;
   @SuppressWarnings("ProtectedMembersInFinalClass")
-  public final @NotNull Retrofit retrofit;
+  protected final @NotNull Retrofit retrofit;
+  public @org.jetbrains.annotations.Nullable RequestBuilder requestBuilder = null;
 
   RequestFactory(Builder builder) {
     method = builder.method;
@@ -98,6 +99,7 @@ public final class RequestFactory {
             hasBody,
             isFormEncoded,
             isMultipart);
+    this.requestBuilder = requestBuilder;
 
     if (isKotlinSuspendFunction) {
       // The Continuation is the last parameter and the handlers array contains null at that index.

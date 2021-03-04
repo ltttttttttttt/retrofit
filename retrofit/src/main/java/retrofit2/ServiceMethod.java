@@ -37,8 +37,11 @@ public abstract class ServiceMethod<T> {
     }
 
     OtherServiceMethod.Factory<?> serviceMethodFactory = retrofit.otherServiceMethodFactory;
-    if (serviceMethodFactory != null)
-      return (ServiceMethod<T>) serviceMethodFactory.createServiceMethod(retrofit, method, requestFactory);
+    if (serviceMethodFactory != null) {
+      ServiceMethod<T> serviceMethod = (ServiceMethod<T>) serviceMethodFactory.createServiceMethod(retrofit, method, requestFactory);
+      if (serviceMethod != null)
+        return serviceMethod;
+    }
     return HttpServiceMethod.parseAnnotations(retrofit, method, requestFactory);
   }
 

@@ -2,8 +2,9 @@
 
 package retrofit2
 
+import okhttp3.FormBody
+import okhttp3.HttpUrl
 import retrofit2.http.*
-import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.net.URLDecoder
@@ -17,9 +18,21 @@ import kotlin.reflect.typeOf
  * warning:
  */
 
-internal var namesField: Field? = null
-internal var valuesField: Field? = null
-internal var encodedQueryNamesAndValuesField: Field? = null
+internal val namesField by lazy {
+    val field = FormBody.Builder::class.java.getDeclaredField("names")
+    field.isAccessible = true
+    field
+}
+internal val valuesField by lazy {
+    val field = FormBody.Builder::class.java.getDeclaredField("values")
+    field.isAccessible = true
+    field
+}
+internal val encodedQueryNamesAndValuesField by lazy {
+    val field = HttpUrl.Builder::class.java.getDeclaredField("encodedQueryNamesAndValues")
+    field.isAccessible = true
+    field
+}
 internal var mapType: Type? = null
 
 private val httpMethodAnnotations = arrayOf(
@@ -228,16 +241,6 @@ internal fun RequestFactory.Builder.handlerParameterFromNoAnnotation(
 internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: RequestBuilder, singleParameterName: String) {
     if (requestBuilder.method == "POST") {
         val formBuilder = requestBuilder.formBuilder ?: return
-        val namesField = namesField ?: kotlin.run {
-            val field = formBuilder::class.java.getDeclaredField("names")
-            field.isAccessible = true
-            field
-        }
-        val valuesField = valuesField ?: kotlin.run {
-            val field = formBuilder::class.java.getDeclaredField("values")
-            field.isAccessible = true
-            field
-        }
         val names = namesField.get(formBuilder) as? ArrayList<String?>
         val values = valuesField.get(formBuilder) as? ArrayList<String?>
         val size = names?.size ?: 0
@@ -259,11 +262,6 @@ internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: Reque
         }
     } else if (requestBuilder.method == "GET") {
         val urlBuilder = requestBuilder.urlBuilder ?: return
-        val encodedQueryNamesAndValuesField = encodedQueryNamesAndValuesField ?: kotlin.run {
-            val field = urlBuilder::class.java.getDeclaredField("encodedQueryNamesAndValues")
-            field.isAccessible = true
-            field
-        }
         val list = encodedQueryNamesAndValuesField.get(urlBuilder) as? ArrayList<String?> ?: return
         val size = list.size
         if (size > 0) {
@@ -281,6 +279,42 @@ internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: Reque
             )
         }
     }
+}
+
+/**
+ * 获取请求键值对map
+ * 只能获取到get和post的
+ */
+@OptIn(ExperimentalStdlibApi::class)
+internal fun RequestFactory.getRequestParameterMap(requestBuilder: RequestBuilder): Map<String?, Any?>? {
+    if (requestBuilder.method == "POST") {
+        val formBuilder = requestBuilder.formBuilder ?: return null
+        val names = namesField.get(formBuilder) as? ArrayList<String?>
+        val values = valuesField.get(formBuilder) as? ArrayList<String?>
+        val size = names?.size ?: 0
+        if (size > 0) {
+            names!!
+            values!!
+            val map = HashMap<String?, String?>(size)
+            for (i in 0 until size) {
+                map[names[i]] = values[i]
+            }
+            return map
+        }
+    } else if (requestBuilder.method == "GET") {
+        val urlBuilder = requestBuilder.urlBuilder ?: return null
+        val list = encodedQueryNamesAndValuesField.get(urlBuilder) as? ArrayList<String?> ?: return null
+        val size = list.size
+        if (size > 0) {
+            val map = HashMap<String?, String?>(size / 2)
+            for (i in 0 until size step 2) {
+                val value = list[i + 1]
+                map[list[i]] = if (value == null) null else URLDecoder.decode(value, "UTF-8")
+            }
+            return map
+        }
+    }
+    return null
 }
 
 /**

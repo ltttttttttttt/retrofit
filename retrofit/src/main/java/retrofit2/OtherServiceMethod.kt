@@ -1,7 +1,7 @@
 package retrofit2
 
+import okhttp3.HttpUrl
 import java.lang.reflect.Method
-import java.lang.reflect.Type
 
 /**
  * creator: lt  2021/3/3  lt.dygzs@qq.com
@@ -11,8 +11,7 @@ import java.lang.reflect.Type
 abstract class OtherServiceMethod<T>(
         val retrofit: Retrofit,
         val method: Method,
-        val adapterType: Type,
-        val annotations: Array<Annotation>,
+        val requestFactory: RequestFactory,
 ) : ServiceMethod<T>() {
 
     interface Factory<T> {
@@ -27,10 +26,15 @@ abstract class OtherServiceMethod<T>(
         ): OtherServiceMethod<T>?
     }
 
-    abstract fun createCall(args: Array<out Any>): Call<T>
+    abstract fun createCall(
+            url: HttpUrl,
+            requestParameterMap: Map<String?, Any?>?
+    ): Call<T>
 
     override fun invoke(args: Array<out Any>): T? {
-        val callAdapter = HttpServiceMethod.createCallAdapter<T, T?>(retrofit, method, adapterType, annotations)
-        return callAdapter.adapt(createCall(args))
+        val callAdapter = HttpServiceMethod.createCallAdapter<T, T?>(retrofit, method, method.genericReturnType, method.annotations)
+        val request = requestFactory.create(args)
+        val requestParameterMap = requestFactory.getRequestParameterMap(requestFactory.requestBuilder!!)
+        return callAdapter.adapt(createCall(request.url(), requestParameterMap))
     }
 }
