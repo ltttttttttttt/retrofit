@@ -286,9 +286,10 @@ internal fun RequestFactory.handlerSingleParameterHandlers(requestBuilder: Reque
  * 只能获取到get和post的
  */
 @OptIn(ExperimentalStdlibApi::class)
-internal fun RequestFactory.getRequestParameterMap(requestBuilder: RequestBuilder): Map<String?, Any?>? {
-    if (requestBuilder.method == "POST") {
-        val formBuilder = requestBuilder.formBuilder ?: return null
+internal fun RequestBuilder?.getRequestParameterMap(): Map<String?, Any?>? {
+    this ?: return null
+    if (method == "POST") {
+        val formBuilder = formBuilder ?: return null
         val names = namesField.get(formBuilder) as? ArrayList<String?>
         val values = valuesField.get(formBuilder) as? ArrayList<String?>
         val size = names?.size ?: 0
@@ -297,25 +298,26 @@ internal fun RequestFactory.getRequestParameterMap(requestBuilder: RequestBuilde
             values!!
             val map = HashMap<String?, String?>(size)
             for (i in 0 until size) {
-                map[names[i]] = values[i]
+                map[names[i].decode()] = values[i].decode()
             }
             return map
         }
-    } else if (requestBuilder.method == "GET") {
-        val urlBuilder = requestBuilder.urlBuilder ?: return null
+    } else if (method == "GET") {
+        val urlBuilder = urlBuilder ?: return null
         val list = encodedQueryNamesAndValuesField.get(urlBuilder) as? ArrayList<String?> ?: return null
         val size = list.size
         if (size > 0) {
             val map = HashMap<String?, String?>(size / 2)
             for (i in 0 until size step 2) {
-                val value = list[i + 1]
-                map[list[i]] = if (value == null) null else URLDecoder.decode(value, "UTF-8")
+                map[list[i].decode()] = list[i + 1].decode()
             }
             return map
         }
     }
     return null
 }
+
+private fun String?.decode() = if (this == null) null else URLDecoder.decode(this, "UTF-8")
 
 /**
  * 处理如果方法不加任何注解,则默认是@POST和@FormUrlEncoded,并且url为方法名,

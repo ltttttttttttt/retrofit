@@ -34,7 +34,7 @@ abstract class OtherServiceMethod<T>(
     override fun invoke(args: Array<out Any>): T? {
         val callAdapter = HttpServiceMethod.createCallAdapter<T, T?>(retrofit, method, method.genericReturnType, method.annotations)
         val request = requestFactory.create(args)
-        val requestParameterMap = requestFactory.getRequestParameterMap(requestFactory.requestBuilder!!)
+        val requestParameterMap = requestFactory.requestBuilder.getRequestParameterMap()
         return callAdapter.adapt(createCall(request.url(), requestParameterMap))
     }
 }
