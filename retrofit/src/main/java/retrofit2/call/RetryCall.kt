@@ -46,6 +46,7 @@ class RetryCall(private val retryNumber: Int, var call: Call<Any?>) : Call<Any?>
                 }
 
                 override fun onFailure(c: Call<Any?>, t: Throwable) {
+                    t.printStackTrace()
                     call = call.clone()
                     enqueue(callback)
                 }
