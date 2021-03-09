@@ -98,7 +98,9 @@ public final class RequestFactory {
             contentType,
             hasBody,
             isFormEncoded,
-            isMultipart);
+            isMultipart,
+            retrofit,
+            method);
     this.requestBuilder = requestBuilder;
 
     if (isKotlinSuspendFunction) {

@@ -17,6 +17,7 @@ package retrofit2;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
+import kotlin.jvm.functions.Function2;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -64,6 +65,7 @@ public final class Retrofit {
   final Class<?> defaultAnnotationClass;
   final @org.jetbrains.annotations.Nullable String singleParameterName;
   final @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory;
+  final @org.jetbrains.annotations.Nullable Function2<String,Method, String> handlerUrlListener;
 
   Retrofit(
       okhttp3.Call.Factory callFactory,
@@ -74,7 +76,8 @@ public final class Retrofit {
       boolean validateEagerly,
       @NotNull Class<?> defaultAnnotationClass,
       @org.jetbrains.annotations.Nullable String singleParameterName,
-      @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory) {
+      @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory,
+      @org.jetbrains.annotations.Nullable Function2<String, Method, String> handlerUrlListener) {
     this.callFactory = callFactory;
     this.baseUrl = baseUrl;
     this.converterFactories = converterFactories; // Copy+unmodifiable at call site.
@@ -84,6 +87,7 @@ public final class Retrofit {
     this.defaultAnnotationClass = defaultAnnotationClass;
     this.singleParameterName = singleParameterName;
     this.otherServiceMethodFactory = otherServiceMethodFactory;
+    this.handlerUrlListener = handlerUrlListener;
   }
 
   /**
@@ -508,6 +512,7 @@ public final class Retrofit {
     private @NotNull Class<?> defaultAnnotationClass = POST.class;
     private @org.jetbrains.annotations.Nullable String singleParameterName = null;
     private @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory = null;
+    private @org.jetbrains.annotations.Nullable Function2<String,Method, String> handlerUrlListener = null;
 
     Builder(Platform platform) {
       this.platform = platform;
@@ -717,6 +722,16 @@ public final class Retrofit {
     }
 
     /**
+     * 设置可以hook短url的回调,返回新的url,如果不处理可以直接将传入的返回
+     * 例如:POST("a/b"),可以通过[handlerUrlListener={s,m->"v/$s"}]将其改为v/a/b
+     * [handlerUrlListener]回调的String为原始url,Method为当前的方法对象,需要返回String的新url
+     */
+    public Builder setHandlerUrlListener(Function2<String, Method, String> handlerUrlListener) {
+      this.handlerUrlListener = handlerUrlListener;
+      return this;
+    }
+
+    /**
      * Create the {@link Retrofit} instance using the configured values.
      *
      * <p>Note: If neither {@link #client} nor {@link #callFactory} is called a default {@link
@@ -761,7 +776,8 @@ public final class Retrofit {
               validateEagerly,
               defaultAnnotationClass,
               singleParameterName,
-              otherServiceMethodFactory);
+              otherServiceMethodFactory,
+              handlerUrlListener);
     }
   }
 }

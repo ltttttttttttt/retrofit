@@ -22,6 +22,7 @@ import okio.BufferedSink;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.regex.Pattern;
 
 final class RequestBuilder {
@@ -46,6 +47,8 @@ final class RequestBuilder {
   private static final Pattern PATH_TRAVERSAL = Pattern.compile("(.*/)?(\\.|%2e|%2E){1,2}(/.*)?");
 
   private final String method;
+  private final Retrofit retrofit;
+  private final Method reflectMethod;
 
   private final HttpUrl baseUrl;
   private @Nullable String relativeUrl;
@@ -68,13 +71,17 @@ final class RequestBuilder {
       @Nullable MediaType contentType,
       boolean hasBody,
       boolean isFormEncoded,
-      boolean isMultipart) {
+      boolean isMultipart,
+      Retrofit retrofit,
+      Method reflectMethod) {
     this.method = method;
     this.baseUrl = baseUrl;
     this.relativeUrl = relativeUrl;
     this.requestBuilder = new Request.Builder();
     this.contentType = contentType;
     this.hasBody = hasBody;
+    this.retrofit = retrofit;
+    this.reflectMethod = reflectMethod;
 
     if (headers != null) {
       headersBuilder = headers.newBuilder();
@@ -180,10 +187,14 @@ final class RequestBuilder {
   void addQueryParam(String name, @Nullable String value, boolean encoded) {
     if (relativeUrl != null) {
       // Do a one-time combination of the built relative URL and the base URL.
-      urlBuilder = baseUrl.newBuilder(relativeUrl);
+      String mUrl = relativeUrl;
+      if (retrofit.handlerUrlListener != null) {
+        mUrl = retrofit.handlerUrlListener.invoke(mUrl, reflectMethod);
+      }
+      urlBuilder = baseUrl.newBuilder(mUrl);
       if (urlBuilder == null) {
         throw new IllegalArgumentException(
-            "Malformed URL. Base: " + baseUrl + ", Relative: " + relativeUrl);
+            "Malformed URL. Base: " + baseUrl + ", Relative: " + mUrl);
       }
       relativeUrl = null;
     }
@@ -244,10 +255,14 @@ final class RequestBuilder {
     } else {
       // No query parameters triggered builder creation, just combine the relative URL and base URL.
       //noinspection ConstantConditions Non-null if urlBuilder is null.
-      url = baseUrl.resolve(relativeUrl);
+      String mUrl = relativeUrl;
+      if (retrofit.handlerUrlListener != null) {
+        mUrl = retrofit.handlerUrlListener.invoke(mUrl, reflectMethod);
+      }
+      url = baseUrl.resolve(mUrl);
       if (url == null) {
         throw new IllegalArgumentException(
-            "Malformed URL. Base: " + baseUrl + ", Relative: " + relativeUrl);
+            "Malformed URL. Base: " + baseUrl + ", Relative: " + mUrl);
       }
     }
 
