@@ -21,7 +21,7 @@ Brief function description in English:
 Download
 --------
 
-Download [the latest JAR][2] or grab from Maven central at the coordinates `com.github.ltttttttttttt:retrofit:1.2.5`
+Download [the latest JAR][2] or grab from Maven central at the coordinates `com.github.ltttttttttttt:retrofit:1.3.2`
 
 Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
 
