@@ -15,11 +15,11 @@
  */
 package retrofit2.http;
 
+import okhttp3.HttpUrl;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import okhttp3.HttpUrl;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -43,6 +43,7 @@ public @interface POST {
     /**
      * 是否使用 @FormUrlEncoded 注解
      * 考虑到默认用POST注解就会同时使用FormUrlEncoded注解,所以直接默认使用(如果空参则不使用)
+     * 默认为true会自动判断有没有参数添加,设置为false是强制不加,加上@FormUrlEncoded为强制加
      */
     boolean isUseFormUrlEncoded() default true;
 }
