@@ -106,16 +106,5 @@ class AutoFormUrlEncodedTest {
                 throw e
             }
         }
-
-        private fun assertBody(body: RequestBody?, expected: String) {
-            body!!
-            val buffer = Buffer()
-            try {
-                body.writeTo(buffer)
-                Assertions.assertThat(buffer.readUtf8()).isEqualTo(expected)
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
-        }
     }
 }
