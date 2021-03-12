@@ -15,16 +15,16 @@
  */
 package retrofit2;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.io.IOException;
 import kotlin.Unit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import retrofit2.http.GET;
+
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public final class KotlinUnitTest {
   @Rule public final MockWebServer server = new MockWebServer();
@@ -46,7 +46,7 @@ public final class KotlinUnitTest {
     assertThat(response.body()).isSameAs(Unit.INSTANCE);
   }
 
-  @Ignore("This is implicitly tested by integration tests of the adapters and converters")
-  @Test
-  public void unitMissingFromClasspath() {}
+  //@Ignore("This is implicitly tested by integration tests of the adapters and converters")
+  //@Test
+  //public void unitMissingFromClasspath() {}
 }

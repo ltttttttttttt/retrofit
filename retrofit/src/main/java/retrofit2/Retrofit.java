@@ -66,6 +66,7 @@ public final class Retrofit {
   final @org.jetbrains.annotations.Nullable String singleParameterName;
   final @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory;
   final @org.jetbrains.annotations.Nullable Function2<String,Method, String> handlerUrlListener;
+  final @org.jetbrains.annotations.NotNull String methodDelimiter;
 
   Retrofit(
       okhttp3.Call.Factory callFactory,
@@ -77,7 +78,8 @@ public final class Retrofit {
       @NotNull Class<?> defaultAnnotationClass,
       @org.jetbrains.annotations.Nullable String singleParameterName,
       @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory,
-      @org.jetbrains.annotations.Nullable Function2<String, Method, String> handlerUrlListener) {
+      @org.jetbrains.annotations.Nullable Function2<String, Method, String> handlerUrlListener,
+      @org.jetbrains.annotations.NotNull String methodDelimiter) {
     this.callFactory = callFactory;
     this.baseUrl = baseUrl;
     this.converterFactories = converterFactories; // Copy+unmodifiable at call site.
@@ -88,6 +90,7 @@ public final class Retrofit {
     this.singleParameterName = singleParameterName;
     this.otherServiceMethodFactory = otherServiceMethodFactory;
     this.handlerUrlListener = handlerUrlListener;
+    this.methodDelimiter = methodDelimiter;
   }
 
   /**
@@ -513,6 +516,7 @@ public final class Retrofit {
     private @org.jetbrains.annotations.Nullable String singleParameterName = null;
     private @org.jetbrains.annotations.Nullable OtherServiceMethod.Factory<?> otherServiceMethodFactory = null;
     private @org.jetbrains.annotations.Nullable Function2<String,Method, String> handlerUrlListener = null;
+    private @org.jetbrains.annotations.NotNull String methodDelimiter = "$";
 
     Builder(Platform platform) {
       this.platform = platform;
@@ -732,6 +736,16 @@ public final class Retrofit {
     }
 
     /**
+     * 设置不写POST和GET注解时,method的名字中的分隔符
+     * 比如默认是$ :  a$b url转换为a/b
+     *            可以改成 _   a_b转换为a/b
+     */
+    public Builder setMethodDelimiter(@org.jetbrains.annotations.NotNull String methodDelimiter) {
+      this.methodDelimiter = methodDelimiter;
+      return this;
+    }
+
+    /**
      * Create the {@link Retrofit} instance using the configured values.
      *
      * <p>Note: If neither {@link #client} nor {@link #callFactory} is called a default {@link
@@ -777,7 +791,8 @@ public final class Retrofit {
               defaultAnnotationClass,
               singleParameterName,
               otherServiceMethodFactory,
-              handlerUrlListener);
+              handlerUrlListener,
+              methodDelimiter);
     }
   }
 }

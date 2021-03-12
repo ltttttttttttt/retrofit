@@ -5,7 +5,6 @@ package retrofit2
 import okhttp3.FormBody
 import okhttp3.HttpUrl
 import retrofit2.http.*
-import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.net.URLDecoder
 import kotlin.reflect.KFunction
@@ -63,175 +62,175 @@ private val httpParameterAnnotations = arrayOf(
         Tag::class.java,
 )
 
-/**
- * 处理如果方法不加任何注解,则默认是@POST和@FormUrlEncoded,并且url为方法名,
- */
-@Deprecated("使用了更优解")
-internal fun RequestFactory.Builder.handlerParseMethodDefaultAnnotation() {
-    if (retrofit.defaultAnnotationClass == POST::class.java) {
-        if (parameterTypes.isNotEmpty() && !(parameterTypes.size == 1 && isKotlinSuspendFunction)) {
-            if (isMultipart) {
-                throw Utils.methodError(method, "Only one encoding annotation is allowed.")
-            }
-            isFormEncoded = true
-        }
-
-        val value = method.name.replace('$', '\\')
-        val httpMethod = "POST"
-        val hasBody = true
-        if (this.httpMethod != null) {
-            throw Utils.methodError(
-                    method,
-                    "Only one HTTP method is allowed. Found: %s and %s.",
-                    this.httpMethod,
-                    httpMethod)
-        }
-        this.httpMethod = httpMethod
-        this.hasBody = hasBody
-
-        if (value.isEmpty()) {
-            return
-        }
-        // Get the relative URL path and existing query string, if present.
-        val question = value.indexOf('?')
-        if (question != -1 && question < value.length - 1) {
-            // Ensure the query string does not have any named parameters.
-            val queryParams = value.substring(question + 1)
-            val queryParamMatcher = RequestFactory.Builder.PARAM_URL_REGEX.matcher(queryParams)
-            if (queryParamMatcher.find()) {
-                throw Utils.methodError(
-                        method, "URL query string \"%s\" must not have replace block. "
-                        + "For dynamic query parameters use @Query.",
-                        queryParams)
-            }
-        }
-
-        relativeUrl = value
-        relativeUrlParamNames = RequestFactory.Builder.parsePathParameters(value)
-    } else if (retrofit.defaultAnnotationClass == GET::class.java) {
-        val value = method.name.replace('$', '\\')
-        val httpMethod = "GET"
-        val hasBody = false
-        if (this.httpMethod != null) {
-            throw Utils.methodError(
-                    method,
-                    "Only one HTTP method is allowed. Found: %s and %s.",
-                    this.httpMethod,
-                    httpMethod)
-        }
-        this.httpMethod = httpMethod
-        this.hasBody = hasBody
-
-        if (value.isEmpty()) {
-            return
-        }
-        // Get the relative URL path and existing query string, if present.
-        val question: Int = value.indexOf('?')
-        if (question != -1 && question < value.length - 1) {
-            // Ensure the query string does not have any named parameters.
-            val queryParams: String = value.substring(question + 1)
-            val queryParamMatcher = RequestFactory.Builder.PARAM_URL_REGEX.matcher(queryParams)
-            if (queryParamMatcher.find()) {
-                throw Utils.methodError(
-                        method, "URL query string \"%s\" must not have replace block. "
-                        + "For dynamic query parameters use @Query.",
-                        queryParams)
-            }
-        }
-
-        relativeUrl = value
-        relativeUrlParamNames = RequestFactory.Builder.parsePathParameters(value)
-    }
-}
-
-/**
- * 处理如果参数不加任何注解,则默认是@Field,并且value为参数名
- */
-@Deprecated("使用了更优解")
-internal fun RequestFactory.Builder.handlerParameterFromNoAnnotation(
-        p: Int,
-        type: Type,
-        annotations: Array<Annotation>,
-        kFunction: KFunction<*>?
-): ParameterHandler<*> {
-    if (retrofit.defaultAnnotationClass == POST::class.java) {
-        validateResolvableType(p, type)
-        if (!isFormEncoded) {
-            throw Utils.parameterError(method, p, "@Field parameters can only be used with form encoding.")
-        }
-        val ktFunction = kFunction
-                ?: throw Utils.parameterError(method, p, "@Field not find, or not use kt file by lt 2333.")
-        val name: String = ktFunction.parameters[p + 1].name
-                ?: throw Utils.parameterError(method, p, "parameter name is null.")
-        val encoded = false
-
-        gotField = true
-
-        val rawParameterType = Utils.getRawType(type)
-        return when {
-            Iterable::class.java.isAssignableFrom(rawParameterType) -> {
-                if (type !is ParameterizedType) {
-                    throw Utils.parameterError(
-                            method,
-                            p,
-                            rawParameterType.simpleName
-                                    + " must include generic type (e.g., "
-                                    + rawParameterType.simpleName
-                                    + "<String>)")
-                }
-                val iterableType = Utils.getParameterUpperBound(0, type)
-                val converter = retrofit.stringConverter<Any>(iterableType, annotations)
-                ParameterHandler.Field(name, converter, encoded).iterable()
-            }
-            rawParameterType.isArray -> {
-                val arrayComponentType = RequestFactory.Builder.boxIfPrimitive(rawParameterType.componentType)
-                val converter = retrofit.stringConverter<Any>(arrayComponentType, annotations)
-                ParameterHandler.Field(name, converter, encoded).array()
-            }
-            else -> {
-                val converter = retrofit.stringConverter<Any>(type, annotations)
-                ParameterHandler.Field(name, converter, encoded)
-            }
-        }
-    } else if (retrofit.defaultAnnotationClass == GET::class.java) {
-        validateResolvableType(p, type)
-        val ktFunction = kFunction
-                ?: throw Utils.parameterError(method, p, "@Query not find, or not use kt file by lt 2333.")
-        val name: String = ktFunction.parameters[p + 1].name
-                ?: throw Utils.parameterError(method, p, "parameter name is null.")
-        val encoded = false
-
-        val rawParameterType = Utils.getRawType(type)
-        gotQuery = true
-        return when {
-            Iterable::class.java.isAssignableFrom(rawParameterType) -> {
-                if (type !is ParameterizedType) {
-                    throw Utils.parameterError(
-                            method,
-                            p,
-                            rawParameterType.simpleName
-                                    + " must include generic type (e.g., "
-                                    + rawParameterType.simpleName
-                                    + "<String>)")
-                }
-                val iterableType = Utils.getParameterUpperBound(0, type)
-                val converter = retrofit.stringConverter<Any>(iterableType, annotations)
-                ParameterHandler.Query(name, converter, encoded).iterable()
-            }
-            rawParameterType.isArray -> {
-                val arrayComponentType = RequestFactory.Builder.boxIfPrimitive(rawParameterType.componentType)
-                val converter = retrofit.stringConverter<Any>(arrayComponentType, annotations)
-                ParameterHandler.Query(name, converter, encoded).array()
-            }
-            else -> {
-                val converter = retrofit.stringConverter<Any>(type, annotations)
-                ParameterHandler.Query(name, converter, encoded)
-            }
-        }
-    } else {
-        throw IllegalArgumentException("defaultAnnotation must set GET.class or POST.class")
-    }
-}
+///**
+// * 处理如果方法不加任何注解,则默认是@POST和@FormUrlEncoded,并且url为方法名,
+// */
+//@Deprecated("使用了更优解")
+//internal fun RequestFactory.Builder.handlerParseMethodDefaultAnnotation() {
+//    if (retrofit.defaultAnnotationClass == POST::class.java) {
+//        if (parameterTypes.isNotEmpty() && !(parameterTypes.size == 1 && isKotlinSuspendFunction)) {
+//            if (isMultipart) {
+//                throw Utils.methodError(method, "Only one encoding annotation is allowed.")
+//            }
+//            isFormEncoded = true
+//        }
+//
+//        val value = method.name.replace('$', '\\')
+//        val httpMethod = "POST"
+//        val hasBody = true
+//        if (this.httpMethod != null) {
+//            throw Utils.methodError(
+//                    method,
+//                    "Only one HTTP method is allowed. Found: %s and %s.",
+//                    this.httpMethod,
+//                    httpMethod)
+//        }
+//        this.httpMethod = httpMethod
+//        this.hasBody = hasBody
+//
+//        if (value.isEmpty()) {
+//            return
+//        }
+//        // Get the relative URL path and existing query string, if present.
+//        val question = value.indexOf('?')
+//        if (question != -1 && question < value.length - 1) {
+//            // Ensure the query string does not have any named parameters.
+//            val queryParams = value.substring(question + 1)
+//            val queryParamMatcher = RequestFactory.Builder.PARAM_URL_REGEX.matcher(queryParams)
+//            if (queryParamMatcher.find()) {
+//                throw Utils.methodError(
+//                        method, "URL query string \"%s\" must not have replace block. "
+//                        + "For dynamic query parameters use @Query.",
+//                        queryParams)
+//            }
+//        }
+//
+//        relativeUrl = value
+//        relativeUrlParamNames = RequestFactory.Builder.parsePathParameters(value)
+//    } else if (retrofit.defaultAnnotationClass == GET::class.java) {
+//        val value = method.name.replace('$', '\\')
+//        val httpMethod = "GET"
+//        val hasBody = false
+//        if (this.httpMethod != null) {
+//            throw Utils.methodError(
+//                    method,
+//                    "Only one HTTP method is allowed. Found: %s and %s.",
+//                    this.httpMethod,
+//                    httpMethod)
+//        }
+//        this.httpMethod = httpMethod
+//        this.hasBody = hasBody
+//
+//        if (value.isEmpty()) {
+//            return
+//        }
+//        // Get the relative URL path and existing query string, if present.
+//        val question: Int = value.indexOf('?')
+//        if (question != -1 && question < value.length - 1) {
+//            // Ensure the query string does not have any named parameters.
+//            val queryParams: String = value.substring(question + 1)
+//            val queryParamMatcher = RequestFactory.Builder.PARAM_URL_REGEX.matcher(queryParams)
+//            if (queryParamMatcher.find()) {
+//                throw Utils.methodError(
+//                        method, "URL query string \"%s\" must not have replace block. "
+//                        + "For dynamic query parameters use @Query.",
+//                        queryParams)
+//            }
+//        }
+//
+//        relativeUrl = value
+//        relativeUrlParamNames = RequestFactory.Builder.parsePathParameters(value)
+//    }
+//}
+//
+///**
+// * 处理如果参数不加任何注解,则默认是@Field,并且value为参数名
+// */
+//@Deprecated("使用了更优解")
+//internal fun RequestFactory.Builder.handlerParameterFromNoAnnotation(
+//        p: Int,
+//        type: Type,
+//        annotations: Array<Annotation>,
+//        kFunction: KFunction<*>?
+//): ParameterHandler<*> {
+//    if (retrofit.defaultAnnotationClass == POST::class.java) {
+//        validateResolvableType(p, type)
+//        if (!isFormEncoded) {
+//            throw Utils.parameterError(method, p, "@Field parameters can only be used with form encoding.")
+//        }
+//        val ktFunction = kFunction
+//                ?: throw Utils.parameterError(method, p, "@Field not find, or not use kt file by lt 2333.")
+//        val name: String = ktFunction.parameters[p + 1].name
+//                ?: throw Utils.parameterError(method, p, "parameter name is null.")
+//        val encoded = false
+//
+//        gotField = true
+//
+//        val rawParameterType = Utils.getRawType(type)
+//        return when {
+//            Iterable::class.java.isAssignableFrom(rawParameterType) -> {
+//                if (type !is ParameterizedType) {
+//                    throw Utils.parameterError(
+//                            method,
+//                            p,
+//                            rawParameterType.simpleName
+//                                    + " must include generic type (e.g., "
+//                                    + rawParameterType.simpleName
+//                                    + "<String>)")
+//                }
+//                val iterableType = Utils.getParameterUpperBound(0, type)
+//                val converter = retrofit.stringConverter<Any>(iterableType, annotations)
+//                ParameterHandler.Field(name, converter, encoded).iterable()
+//            }
+//            rawParameterType.isArray -> {
+//                val arrayComponentType = RequestFactory.Builder.boxIfPrimitive(rawParameterType.componentType)
+//                val converter = retrofit.stringConverter<Any>(arrayComponentType, annotations)
+//                ParameterHandler.Field(name, converter, encoded).array()
+//            }
+//            else -> {
+//                val converter = retrofit.stringConverter<Any>(type, annotations)
+//                ParameterHandler.Field(name, converter, encoded)
+//            }
+//        }
+//    } else if (retrofit.defaultAnnotationClass == GET::class.java) {
+//        validateResolvableType(p, type)
+//        val ktFunction = kFunction
+//                ?: throw Utils.parameterError(method, p, "@Query not find, or not use kt file by lt 2333.")
+//        val name: String = ktFunction.parameters[p + 1].name
+//                ?: throw Utils.parameterError(method, p, "parameter name is null.")
+//        val encoded = false
+//
+//        val rawParameterType = Utils.getRawType(type)
+//        gotQuery = true
+//        return when {
+//            Iterable::class.java.isAssignableFrom(rawParameterType) -> {
+//                if (type !is ParameterizedType) {
+//                    throw Utils.parameterError(
+//                            method,
+//                            p,
+//                            rawParameterType.simpleName
+//                                    + " must include generic type (e.g., "
+//                                    + rawParameterType.simpleName
+//                                    + "<String>)")
+//                }
+//                val iterableType = Utils.getParameterUpperBound(0, type)
+//                val converter = retrofit.stringConverter<Any>(iterableType, annotations)
+//                ParameterHandler.Query(name, converter, encoded).iterable()
+//            }
+//            rawParameterType.isArray -> {
+//                val arrayComponentType = RequestFactory.Builder.boxIfPrimitive(rawParameterType.componentType)
+//                val converter = retrofit.stringConverter<Any>(arrayComponentType, annotations)
+//                ParameterHandler.Query(name, converter, encoded).array()
+//            }
+//            else -> {
+//                val converter = retrofit.stringConverter<Any>(type, annotations)
+//                ParameterHandler.Query(name, converter, encoded)
+//            }
+//        }
+//    } else {
+//        throw IllegalArgumentException("defaultAnnotation must set GET.class or POST.class")
+//    }
+//}
 
 /**
  * 检查是否设置了合并参数,如果开启了则POST将Field合并到一块,GET将Query合并,且仅支持GET和POST
@@ -336,9 +335,9 @@ internal fun RequestFactory.Builder.getMethodDefaultAnnotationAndHttpMethod(): P
                 }
                 isFormEncoded = true
             }
-            DefaultPOST(method.name.replace('$', '\\')) to POST::class.java
+            DefaultPOST(method.name.replace(retrofit.methodDelimiter, "\\")) to POST::class.java
         }
-        GET::class.java -> DefaultGET(method.name.replace('$', '\\')) to GET::class.java
+        GET::class.java -> DefaultGET(method.name.replace(retrofit.methodDelimiter, "\\")) to GET::class.java
         else -> throw IllegalArgumentException("defaultAnnotation must set GET.class or POST.class")
     }
 }

@@ -18,7 +18,6 @@ package retrofit2;
 import okhttp3.*;
 import okio.Buffer;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import retrofit2.helpers.NullObjectConverterFactory;
 import retrofit2.helpers.ToStringConverterFactory;
@@ -841,23 +840,23 @@ public final class RequestFactoryTest {
     assertThat(request.body()).isNull();
   }
 
-  @Ignore("This test is valid but isn't validated by RequestFactory so it needs moved")
-  @Test
-  public void headWithoutVoidThrows() {
-    class Example {
-      @HEAD("/foo/bar/") //
-      Call<ResponseBody> method() {
-        return null;
-      }
-    }
-    try {
-      buildRequest(Example.class);
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e)
-          .hasMessage("HEAD method must use Void as response type.\n    for method Example.method");
-    }
-  }
+  //@Ignore("This test is valid but isn't validated by RequestFactory so it needs moved")
+  //@Test
+  //public void headWithoutVoidThrows() {
+  //  class Example {
+  //    @HEAD("/foo/bar/") //
+  //    Call<ResponseBody> method() {
+  //      return null;
+  //    }
+  //  }
+  //  try {
+  //    buildRequest(Example.class);
+  //    fail();
+  //  } catch (IllegalArgumentException e) {
+  //    assertThat(e)
+  //        .hasMessage("HEAD method must use Void as response type.\n    for method Example.method");
+  //  }
+  //}
 
   @Test
   public void post() {

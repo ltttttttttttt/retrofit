@@ -122,19 +122,19 @@ class KotlinSuspendTest {
     }
   }
 
-  @Ignore("Not working yet")
-  @Test fun bodyNullable() {
-    val retrofit = Retrofit.Builder()
-        .baseUrl(server.url("/"))
-        .addConverterFactory(ToStringConverterFactory())
-        .build()
-    val example = retrofit.create(Service::class.java)
-
-    server.enqueue(MockResponse().setResponseCode(204))
-
-    val body = runBlocking { example.bodyNullable() }
-    assertThat(body).isNull()
-  }
+//  @Ignore("Not working yet")
+//  @Test fun bodyNullable() {
+//    val retrofit = Retrofit.Builder()
+//        .baseUrl(server.url("/"))
+//        .addConverterFactory(ToStringConverterFactory())
+//        .build()
+//    val example = retrofit.create(Service::class.java)
+//
+//    server.enqueue(MockResponse().setResponseCode(204))
+//
+//    val body = runBlocking { example.bodyNullable() }
+//    assertThat(body).isNull()
+//  }
 
   @Test fun response() {
     val retrofit = Retrofit.Builder()

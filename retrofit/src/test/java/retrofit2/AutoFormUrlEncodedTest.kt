@@ -51,21 +51,21 @@ class AutoFormUrlEncodedTest {
     }
 
     @Test
-    fun test1() {
+    fun testDefault() {
         val request = buildRequest(Example::class.java, "bar", "pong")
         val body = request.body()
         Assertions.assertThat(body!!.contentType().toString()).isEqualTo("application/x-www-form-urlencoded")
     }
 
     @Test
-    fun test2() {
+    fun testDefaultNotParameter() {
         val request = buildRequest(Example2::class.java)
         val body = request.body()
         Assertions.assertThat(body!!.contentType().toString()).isEqualTo("null")
     }
 
     @Test
-    fun test3() {
+    fun testNotParameterCompulsoryAddFormUrlEncoded() {
         try {
             buildRequest(Example3::class.java)
         } catch (e: IllegalArgumentException) {
@@ -77,7 +77,7 @@ class AutoFormUrlEncodedTest {
     }
 
     @Test
-    fun test4() {
+    fun testCompulsoryFormUrlEncodedSetFalse() {
         try {
             buildRequest(Example4::class.java)
         } catch (e: IllegalArgumentException) {
