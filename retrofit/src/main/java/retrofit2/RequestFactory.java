@@ -191,18 +191,22 @@ public final class RequestFactory {
       if (pair.getFirst() != null)
         parseMethodAnnotation(pair.getFirst());
       for (Annotation annotation : methodAnnotations) {
-        if (annotation instanceof POST && parameterTypes.length > 0
+        if (annotation instanceof FormUrlEncoded) {
+          isFormEncoded = true;
+        } else if (annotation instanceof POST && parameterTypes.length > 0
                 && ((POST) annotation).isUseFormUrlEncoded()
                 && !(parameterTypes.length == 1 && isKotlinSuspendFunction)) {
           //在这里需要判断,是否是所有参数都有非Field的参数注解,就false;只要有一个参数没有参数注解,且默认注解为POST就为true,其他情况为true
           isFormEncoded = true;
+          int fieldNumber = 0;
           for (Annotation[] annotations : parameterAnnotationsArray) {
             Class<?> clazz = RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(annotations);
-            if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && (clazz != Field.class && clazz != FieldMap.class))) {
-              isFormEncoded = false;
-              break;
-            }
+            if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && (clazz != Field.class && clazz != FieldMap.class)))
+              continue;
+            fieldNumber++;
           }
+          if (fieldNumber == 0)
+            isFormEncoded = false;
         }
         parseMethodAnnotation(annotation);
       }

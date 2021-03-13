@@ -16,15 +16,14 @@
 package retrofit2
 
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.ResponseBody
-import okio.Buffer
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import retrofit2.helpers.ToStringConverterFactory
+import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.POST
-import java.io.IOException
+import retrofit2.http.Url
 import javax.annotation.Nullable
 
 /**
@@ -48,6 +47,13 @@ class AutoFormUrlEncodedTest {
     interface Example4 {
         @POST("test", isUseFormUrlEncoded = false)
         fun method(@Nullable foo2: String?, ping: String?): Call<ResponseBody>
+    }
+
+    interface Example5 {
+        @POST
+        @FormUrlEncoded
+        fun getHtml(@Url path: String?,
+                    @Field("theme") theme: String?): Call<ResponseBody>
     }
 
     @Test
@@ -86,6 +92,21 @@ class AutoFormUrlEncodedTest {
             return
         }
         assert(false)
+    }
+
+    @Test
+    fun testFormUrlEncodedAndField() {
+        val request = buildRequest(Example5::class.java, "bar", "pong")
+        val body = request.body()
+        Assertions.assertThat(body!!.contentType().toString()).isEqualTo("application/x-www-form-urlencoded")
+    }
+
+    @Test
+    fun testPreInit() {
+        val retrofit = Retrofit.Builder().baseUrl("http://example.com/").addConverterFactory(ToStringConverterFactory()).build()
+        retrofit.create(Example5::class.java)
+        retrofit.preInit(Example5::class.java)
+        assert(true)
     }
 
     companion object {
