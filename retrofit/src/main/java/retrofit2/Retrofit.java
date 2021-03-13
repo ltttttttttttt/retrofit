@@ -212,6 +212,20 @@ public final class Retrofit {
   }
 
   /**
+   * 预初始化所有的方法,使用时更快(且可以初始化kt的方法)
+   * 注意需要在子线程调用,否则会造成anr,且由于将所有方法载入,所以会增加内存消耗,属于懒汉式(空间换时间)
+   *
+   * @param interfaceClass retrofit.create传入的class,注意需要先调用create
+   */
+  public void preInit(Class<?> interfaceClass) {
+    for (Method method : interfaceClass.getMethods()) {
+      if (method.getDeclaringClass() == Object.class)
+        continue;
+      loadServiceMethod(method);
+    }
+  }
+
+  /**
    * The factory used to create {@linkplain okhttp3.Call OkHttp calls} for sending a HTTP requests.
    * Typically an instance of {@link OkHttpClient}.
    */
