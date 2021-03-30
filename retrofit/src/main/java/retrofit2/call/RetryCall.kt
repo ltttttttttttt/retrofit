@@ -12,10 +12,10 @@ import java.io.IOException
  * effect : 用于处理重试请求
  * warning:
  */
-class RetryCall(private val retryNumber: Int, var call: Call<Any?>) : Call<Any?> {
+class RetryCall<T>(private val retryNumber: Int, var call: Call<T>) : Call<T> {
     private var retry = 0
 
-    override fun execute(): Response<Any?> {
+    override fun execute(): Response<T> {
         while (retry <= retryNumber) {
             retry++
             try {
@@ -32,11 +32,11 @@ class RetryCall(private val retryNumber: Int, var call: Call<Any?>) : Call<Any?>
         throw IOException()
     }
 
-    override fun enqueue(callback: Callback<Any?>) {
+    override fun enqueue(callback: Callback<T>) {
         if (retry <= retryNumber) {
             retry++
-            call.enqueue(object : Callback<Any?> {
-                override fun onResponse(c: Call<Any?>, response: Response<Any?>) {
+            call.enqueue(object : Callback<T> {
+                override fun onResponse(c: Call<T>, response: Response<T>) {
                     if (response.isSuccessful && response.body() != null)
                         callback.onResponse(c, response)
                     else {
@@ -45,7 +45,7 @@ class RetryCall(private val retryNumber: Int, var call: Call<Any?>) : Call<Any?>
                     }
                 }
 
-                override fun onFailure(c: Call<Any?>, t: Throwable) {
+                override fun onFailure(c: Call<T>, t: Throwable) {
                     t.printStackTrace()
                     call = call.clone()
                     enqueue(callback)
@@ -56,7 +56,7 @@ class RetryCall(private val retryNumber: Int, var call: Call<Any?>) : Call<Any?>
         }
     }
 
-    override fun clone(): Call<Any?> = call.clone()
+    override fun clone(): Call<T> = call.clone()
 
     override fun isExecuted(): Boolean = call.isExecuted
 
