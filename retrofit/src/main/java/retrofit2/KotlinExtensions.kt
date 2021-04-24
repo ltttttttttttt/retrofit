@@ -20,6 +20,7 @@ package retrofit2
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import retrofit2.call.RetryCall
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlin.coroutines.intrinsics.intercepted
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
@@ -29,75 +30,77 @@ import kotlin.coroutines.resumeWithException
 inline fun <reified T> Retrofit.create(): T = create(T::class.java)
 
 suspend fun <T : Any> Call<T>.await(): T {
-  return suspendCancellableCoroutine { continuation ->
-    continuation.invokeOnCancellation {
-      cancel()
-    }
-    enqueue(object : Callback<T> {
-      override fun onResponse(call: Call<T>, response: Response<T>) {
-        if (response.isSuccessful) {
-          val body = response.body()
-          if (body == null) {
-            val invocation = call.request().tag(Invocation::class.java)!!
-            val method = invocation.method()
-            val e = KotlinNullPointerException("Response from " +
-                method.declaringClass.name +
-                '.' +
-                method.name +
-                " was null but response body type was declared as non-null")
-            continuation.resumeWithException(e)
-          } else {
-            continuation.resume(body)
-          }
-        } else {
-          continuation.resumeWithException(HttpException(response))
+    return suspendCancellableCoroutine { continuation ->
+        continuation.invokeOnCancellation {
+            cancel()
         }
-      }
+        enqueue(object : Callback<T> {
+            override fun onResponse(call: Call<T>, response: Response<T>) {
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body == null) {
+                        val invocation = call.request().tag(Invocation::class.java)!!
+                        val method = invocation.method()
+                        val e = KotlinNullPointerException(
+                            "Response from " +
+                                    method.declaringClass.name +
+                                    '.' +
+                                    method.name +
+                                    " was null but response body type was declared as non-null"
+                        )
+                        continuation.resumeWithException(e)
+                    } else {
+                        continuation.resume(body)
+                    }
+                } else {
+                    continuation.resumeWithException(HttpException(response))
+                }
+            }
 
-      override fun onFailure(call: Call<T>, t: Throwable) {
-        continuation.resumeWithException(t)
-      }
-    })
-  }
+            override fun onFailure(call: Call<T>, t: Throwable) {
+                continuation.resumeWithException(t)
+            }
+        })
+    }
 }
 
 @JvmName("awaitNullable")
 suspend fun <T : Any> Call<T?>.await(): T? {
-  return suspendCancellableCoroutine { continuation ->
-    continuation.invokeOnCancellation {
-      cancel()
-    }
-    enqueue(object : Callback<T?> {
-      override fun onResponse(call: Call<T?>, response: Response<T?>) {
-        if (response.isSuccessful) {
-          continuation.resume(response.body())
-        } else {
-          continuation.resumeWithException(HttpException(response))
+    return suspendCancellableCoroutine { continuation ->
+        continuation.invokeOnCancellation {
+            cancel()
         }
-      }
+        enqueue(object : Callback<T?> {
+            override fun onResponse(call: Call<T?>, response: Response<T?>) {
+                if (response.isSuccessful) {
+                    continuation.resume(response.body())
+                } else {
+                    continuation.resumeWithException(HttpException(response))
+                }
+            }
 
-      override fun onFailure(call: Call<T?>, t: Throwable) {
-        continuation.resumeWithException(t)
-      }
-    })
-  }
+            override fun onFailure(call: Call<T?>, t: Throwable) {
+                continuation.resumeWithException(t)
+            }
+        })
+    }
 }
 
 suspend fun <T> Call<T>.awaitResponse(): Response<T> {
-  return suspendCancellableCoroutine { continuation ->
-    continuation.invokeOnCancellation {
-      cancel()
-    }
-    enqueue(object : Callback<T> {
-      override fun onResponse(call: Call<T>, response: Response<T>) {
-        continuation.resume(response)
-      }
+    return suspendCancellableCoroutine { continuation ->
+        continuation.invokeOnCancellation {
+            cancel()
+        }
+        enqueue(object : Callback<T> {
+            override fun onResponse(call: Call<T>, response: Response<T>) {
+                continuation.resume(response)
+            }
 
-      override fun onFailure(call: Call<T>, t: Throwable) {
-        continuation.resumeWithException(t)
-      }
-    })
-  }
+            override fun onFailure(call: Call<T>, t: Throwable) {
+                continuation.resumeWithException(t)
+            }
+        })
+    }
 }
 
 /**
@@ -110,10 +113,16 @@ suspend fun <T> Call<T>.awaitResponse(): Response<T> {
  * https://github.com/Kotlin/kotlinx.coroutines/pull/1667#issuecomment-556106349
  */
 internal suspend fun Exception.suspendAndThrow(): Nothing {
-  suspendCoroutineUninterceptedOrReturn<Nothing> { continuation ->
-    Dispatchers.Default.dispatch(continuation.context, Runnable {
-      continuation.intercepted().resumeWithException(this@suspendAndThrow)
-    })
-    COROUTINE_SUSPENDED
-  }
+    suspendCoroutineUninterceptedOrReturn<Nothing> { continuation ->
+        Dispatchers.Default.dispatch(continuation.context, Runnable {
+            continuation.intercepted().resumeWithException(this@suspendAndThrow)
+        })
+        COROUTINE_SUSPENDED
+    }
 }
+
+/**
+ * 快捷创建出retryCall
+ */
+fun <T> Call<T>.toRetryCall(retryNumber: Int, retryWaitTime: Long = 0L): RetryCall<T> =
+    RetryCall(this, retryNumber, retryWaitTime)
