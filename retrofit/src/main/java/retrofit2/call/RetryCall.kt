@@ -74,7 +74,7 @@ class RetryCall<T>(
 
     private fun reEnqueue(callback: Callback<T>, c: Call<T>) {
         // TODO by lt 2021/4/24 18:26 处理异步定时,可以直接拿retrofit的线程池
-        // TODO by lt 2021/4/24 18:46 需要将回调放入相应线程中(主线程),reEnqueue和enqueue方法 
+        // TODO by lt 2021/4/24 18:46 需要将回调放入相应线程中(主线程),reEnqueue和enqueue方法
         //submit{
 //        try {
 //            Thread.sleep(retryWaitTime)
