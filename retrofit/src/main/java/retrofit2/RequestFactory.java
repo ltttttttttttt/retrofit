@@ -190,23 +190,33 @@ public final class RequestFactory {
       Pair<Annotation, Class<?>> pair = RequestFactoryKtUtil.getMethodDefaultAnnotationAndHttpMethod(this);
       if (pair.getFirst() != null)
         parseMethodAnnotation(pair.getFirst());
+      boolean haveFormUrlEncoded = false;
+      boolean haveMultipart = false;
       for (Annotation annotation : methodAnnotations) {
         if (annotation instanceof FormUrlEncoded) {
           isFormEncoded = true;
+          haveFormUrlEncoded = true;
         } else if (annotation instanceof POST && parameterTypes.length > 0
                 && ((POST) annotation).isUseFormUrlEncoded()
                 && !(parameterTypes.length == 1 && isKotlinSuspendFunction)) {
-          //在这里需要判断,是否是所有参数都有非Field的参数注解,就false;只要有一个参数没有参数注解,且默认注解为POST就为true,其他情况为true
-          isFormEncoded = true;
-          int fieldNumber = 0;
-          for (Annotation[] annotations : parameterAnnotationsArray) {
-            Class<?> clazz = RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(annotations);
-            if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && (clazz != Field.class && clazz != FieldMap.class)))
-              continue;
-            fieldNumber++;
+          if (!haveFormUrlEncoded && !haveMultipart) {
+            //在这里需要判断,是否是所有参数都有非Field的参数注解,就false;只要有一个参数没有参数注解,且默认注解为POST就为true,其他情况为true
+            isFormEncoded = true;
+            int fieldNumber = 0;
+            for (Annotation[] annotations : parameterAnnotationsArray) {
+              Class<?> clazz = RequestFactoryKtUtil.parameterAnnotationContainsRequestAnnotation(annotations);
+              if ((clazz == null && retrofit.defaultAnnotationClass != POST.class) || (clazz != null && (clazz != Field.class && clazz != FieldMap.class)))
+                continue;
+              fieldNumber++;
+            }
+            if (fieldNumber == 0)
+              isFormEncoded = false;
           }
-          if (fieldNumber == 0)
+        } else if (annotation instanceof Multipart) {
+          if (!haveFormUrlEncoded) {
             isFormEncoded = false;
+            haveMultipart = true;
+          }
         }
         parseMethodAnnotation(annotation);
       }
