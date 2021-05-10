@@ -20,7 +20,6 @@ package retrofit2
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
-import retrofit2.call.RetryCall
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlin.coroutines.intrinsics.intercepted
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
@@ -120,9 +119,3 @@ internal suspend fun Exception.suspendAndThrow(): Nothing {
         COROUTINE_SUSPENDED
     }
 }
-
-/**
- * 快捷创建出retryCall
- */
-fun <T> Call<T>.toRetryCall(retryNumber: Int, retryWaitTime: Long = 0L): RetryCall<T> =
-    RetryCall(this, retryNumber, retryWaitTime)
